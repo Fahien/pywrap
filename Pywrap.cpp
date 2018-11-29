@@ -77,6 +77,8 @@ PyspotMatchHandler::PyTag::PyTag( const TagDecl* const pTagDecl )
 ,	methods    { *this }
 ,	accessors  { *this }
 ,	members    { *this }
+,	typeObject { *this }
+,	enums      { *this }
 {}
 
 
@@ -303,7 +305,8 @@ PyspotMatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const CXXMethodDecl*
 
 	for ( auto pParam : pMethod->parameters() )
 	{
-		auto paramName = pParam->getNameAsString();
+		auto paramName = "pw" + pParam->getNameAsString();
+		auto dataName = "p" + pParam->getNameAsString();
 		auto staticParamName = "a" + paramName;
 
 		kwlist += staticParamName + ", ";
@@ -315,14 +318,26 @@ PyspotMatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const CXXMethodDecl*
 		if ( pType->isBuiltinType() )
 		{
 			methodDecl.definition += pParam->getType().withoutLocalFastQualifiers().getAsString();
+			methodDecl.definition += " " + paramName + " {};\n";
+			callArglist += paramName + ", ";
 		}
 		else
 		{
-			methodDecl.definition += "PyObject*";
+			// Wrapper
+			methodDecl.definition += "_PyspotWrapper*";
+			methodDecl.definition += " " + paramName + " {};\n";
+			// Get type as pointer
+			auto paramType = pParam->getType().withoutLocalFastQualifiers().getAsString();
+			if (paramType.back() == '&')
+			{
+				paramType.back() = ' ';
+			}
+			// Pointer to data
+			methodDecl.definition += "\tauto " + dataName + " = reinterpret_cast<"
+				+ paramType + "*>( " + paramName + "->pData );\n";
+			callArglist += "*" + dataName + ", ";
 		}
-		methodDecl.definition += " " + paramName + " {};\n";
 		arglist += ", &" + paramName;
-		callArglist += paramName + ", ";
 
 		methodDecl.definition += "\tstatic char " + staticParamName + "["
 			+ std::to_string( paramName.length() + 1 ) + "] { \"" + paramName + "\" };\n\n";
@@ -409,6 +424,35 @@ PyspotMatchHandler::PyTypeObj::PyTypeObj( const PyTag& pyTag )
 		"\tPyspotWrapper_New,\n};\n\n";
 }
 
+PyspotMatchHandler::PyMembers::PyMembers( const PyTag& pyTag )
+{
+	name = "g_" + pyTag.pyName + "_members";
+	declaration = "extern PyMemberDef " + name + "[1];\n\n";
+	definition  = "PyMemberDef " + name + "[]\n{\n\t{ nullptr } // sentinel\n};\n\n";
+}
+
+
+PyspotMatchHandler::PyEnums::PyEnums( const PyTag& pyTag )
+{
+	if ( auto pEnum = pyTag.AsEnum() )
+	{
+		for ( auto value : pEnum->enumerators() )
+		{
+			auto name = value->getNameAsString();
+
+			definition += "\tPyDict_SetItemString( " + pyTag.typeObject.name
+				+ ".tp_dict, \"" + name + "\", pyspot::Wrapper<" + pyTag.qualifiedName + ">{ "
+				+ pyTag.qualifiedName + "::" + name + " }.GetIncref() );\n";
+		}
+	}
+}
+
+
+void PyspotMatchHandler::PyEnums::Flush( PyspotFrontendAction& action )
+{
+	action.AddEnumerator( definition );
+}
+
 
 PyspotMatchHandler::WrapperConstructors::WrapperConstructors( const PyTag& pyTag, const std::string& objectName )
 {
@@ -447,14 +491,6 @@ PyspotMatchHandler::WrapperConstructors::WrapperConstructors( const PyTag& pyTag
 			+ pyTag.qualifiedName + "{ std::move( v ) } }\n{\n" + getWrapper
 			+ "\tpWrapper->pData = pPayload;\n\tpWrapper->bOwnData = true;\n}\n\n";
 	}
-}
-
-
-PyspotMatchHandler::PyMembers::PyMembers( const PyTag& pyTag )
-{
-	name = "g_" + pyTag.pyName + "_members";
-	declaration = "extern PyMemberDef " + name + "[1];\n\n";
-	definition  = "PyMemberDef " + name + "[]\n{\n\t{ nullptr } // sentinel\n};\n\n";
 }
 
 
@@ -547,10 +583,8 @@ void PyspotMatchHandler::PyTag::Flush( PyspotFrontendAction& action )
 	compare.Flush( action );
 	methods.Flush( action );
 	members.Flush( action );
-
-	// Generate PyTypeObject
-	PyTypeObj typeObject { *this };
 	typeObject.Flush( action );
+	enums.Flush( action );
 
 	// Class registration
 	auto reg = "\t// Register " + name + "\n"
@@ -809,6 +843,12 @@ void Printer::printExtensionSource( StringRef name )
 	for ( auto& reg : m_ClassRegistrations )
 	{
 		source += reg;
+	}
+
+	// Add enumerators
+	for ( auto& item : m_Enumerators )
+	{
+		source += item;
 	}
 
 	// Return the module
