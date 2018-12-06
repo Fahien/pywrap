@@ -195,28 +195,153 @@ void PyspotMatchHandler::PyAccessors::Flush( PyspotFrontendAction& action )
 
 
 PyspotMatchHandler::PyInit::PyInit( const PyTag& pyTag )
+:	owner { pyTag }
 {
 	name = pyTag.pyName + "_Init";
-	auto sign = "int " + name + "( _PyspotWrapper* pSelf, PyObject*, PyObject* )";
+	auto sign = "int " + name + "( _PyspotWrapper* pSelf, PyObject* pArgs, PyObject* pKwds )";
 	declaration = sign + ";\n\n";
 	definition  = sign + "\n{\n\t" + pyTag.qualifiedName
 		+ "* pData { nullptr };\n\n\tif ( pSelf->pData )\n\t{\n\t\tpData = reinterpret_cast<"
-		+ pyTag.qualifiedName + "*>( pSelf->pData );\n\t}\n\telse\n\t{\n";
+		+ pyTag.qualifiedName + "*>( pSelf->pData );\n\t\treturn 0;\n\t}\n\n";
+
+	definition += "\tauto argsSize = PyTuple_Size( pArgs );\n"
+		"\tauto kwdsSize = pKwds ? PyDict_Size( pKwds ) : 0;\n\n";
 
 	auto pClass = pyTag.AsClass();
 	if ( pClass && pClass->hasDefaultConstructor() )
 	{
-		definition += "\t\tpData = new " + pyTag.qualifiedName
-			+ "{};\n\t\tpSelf->pData = pData;\n\t\tpSelf->bOwnData = true;\n";
+		definition += "\tif ( argsSize == 0 && kwdsSize == 0 )\n"
+			"\t{\n\t\tpData = new " + pyTag.qualifiedName + "{};\n"
+			"\t\tpSelf->pData = pData;\n"
+			"\t\tpSelf->bOwnData = true;\n"
+			"\t\treturn 0;\n\t}\n\n";
 	}
-	else
-	{
-		definition += "\t\treturn -1;\n";
-	}
-
-	definition += "\t}\n\n\treturn 0;\n}\n\n";
 }
 
+void PyspotMatchHandler::PyInit::Add( const CXXConstructorDecl* pConstructor )
+{
+	size_t positionalCount { 0 };
+	size_t keywordCount    { 0 };
+	// Get positional and keyword argument size
+	for ( auto pParam : pConstructor->parameters() )
+	{
+		pParam->hasDefaultArg() ? ++keywordCount : ++positionalCount;
+	}
+
+	definition += "\tif ( ( argsSize + kwdsSize ) == "
+		+ std::to_string( pConstructor->parameters().size() ) + " )\n\t{\n";
+
+	auto kwlistName = "a" + name + "_kvlist";
+	auto kwlist = "static char* " + kwlistName + "[] { ";
+	auto fmtName = "a" + name + "_fmt";
+	auto fmt = "static const char* " + fmtName + " { \"";
+	std::string arglist;
+	std::string callArglist;
+
+	for ( auto pParam : pConstructor->parameters() )
+	{
+		auto paramName = "pw" + pParam->getNameAsString();
+		auto dataName = "p" + pParam->getNameAsString();
+		auto staticParamName = "a" + paramName;
+
+		kwlist += staticParamName + ", ";
+
+		auto pType = pParam->getType().getTypePtr();
+
+		if ( positionalCount == 0 )
+		{
+			fmt += "|";
+		}
+
+		if ( positionalCount >= 0 )
+		{
+			--positionalCount;
+		}
+
+		fmt += pyspot::to_parser( pType );
+
+		definition += "\t\t";
+		if ( pType->isBuiltinType() )
+		{
+			definition += pParam->getType().withoutLocalFastQualifiers().getAsString();
+			definition += " " + paramName + " {};\n";
+			callArglist += paramName + ", ";
+		}
+		else
+		{
+			// Wrapper
+			definition += "PyObject* " + paramName + " {};\n";
+
+			callArglist += "*" + dataName + ", ";
+		}
+		arglist += ", &" + paramName;
+
+		definition += "\t\tstatic char " + staticParamName + "["
+			+ std::to_string( paramName.length() + 1 ) + "] { \""
+			+ pParam->getNameAsString() + "\" };\n\n";
+	}
+
+	if ( positionalCount == 0 )
+	{
+		fmt += "|";
+	}
+
+	if ( callArglist.size() > 2 )
+	{
+		callArglist = callArglist.substr(0, callArglist.size() - 2);
+	}
+
+	definition += "\t\t" + kwlist + "nullptr };\n";
+	definition += "\t\t" + fmt + "\" };\n\n";
+
+	definition += "\t\tif ( PyArg_ParseTupleAndKeywords( pArgs, pKwds, "
+		+ fmtName + ", " + kwlistName + arglist + " ) )\n\t\t{\n";
+
+	std::string constructorArgList {};
+
+	for ( size_t i { 0 }; i < pConstructor->parameters().size(); ++i )
+	{
+		auto pParam = pConstructor->parameters()[i];
+		auto paramName = "pw" + pParam->getNameAsString();
+		auto dataName = "p" + pParam->getNameAsString();
+
+		// Get param type
+		auto pType = pParam->getType().getTypePtr();
+
+		if ( pType->isBuiltinType() )
+		{
+			constructorArgList += paramName;
+		}
+		else
+		{
+			// Get type as pointer
+			auto paramType = pParam->getType().withoutLocalFastQualifiers().getAsString();
+			if (paramType.back() == '&')
+			{
+				paramType.back() = ' ';
+			}
+
+			// Pointer to data
+			definition += "\t\t\tauto " + dataName + " = " + pyspot::to_c( paramType, paramName ) + ";\n";
+			constructorArgList += dataName;
+		}
+
+		if ( i < pConstructor->parameters().size() - 1 )
+		{
+			constructorArgList += ", ";
+		}
+	}
+
+	definition += "\t\t\tpData = new " + owner.qualifiedName + "{ " + constructorArgList
+		+ " };\n\t\t\tpSelf->pData = pData;\n\t\t\tpSelf->bOwnData = true;\n\t\t\treturn 0;\n\t\t}\n\t}\n";
+}
+
+void PyspotMatchHandler::PyInit::Flush( PyspotFrontendAction& action )
+{
+	definition += "\n\treturn -1;\n}\n\n";
+
+	PyDecl::Flush( action );
+}
 
 PyspotMatchHandler::PyCompare::PyCompare( const PyTag& pyTag )
 :	owner { pyTag }
@@ -225,6 +350,11 @@ PyspotMatchHandler::PyCompare::PyCompare( const PyTag& pyTag )
 	auto sign = "PyObject* " + name + "( _PyspotWrapper* pLhs, _PyspotWrapper* pRhs, int op )";
 	declaration = sign + ";\n\n";
 	definition  = sign + "\n{\n";
+
+	if ( pyTag.AsEnum() )
+	{
+		Add( OO_EqualEqual );
+	}
 }
 
 
@@ -521,8 +651,6 @@ bool PyspotMatchHandler::checkHandled( const PyTag& pyTag )
 
 void PyspotMatchHandler::PyTag::Flush( PyspotFrontendAction& action )
 {
-	// Init
-	init.Flush( action );
 	destructor.Flush( action );
 
 	// Get public members
@@ -560,14 +688,21 @@ void PyspotMatchHandler::PyTag::Flush( PyspotFrontendAction& action )
 		{
 			auto bPublic = ( pMethod->getAccess() == AS_public );
 			auto bOverloaded = pMethod->isOverloadedOperator();
-			auto bDestructor = ( pMethod->getKind() == pMethod->CXXDestructor );
 			auto bConstructor = ( pMethod->getKind() == pMethod->CXXConstructor );
-			if ( !bPublic || bDestructor || bConstructor )
+			auto bDestructor = ( pMethod->getKind() == pMethod->CXXDestructor );
+			if ( !bPublic || bDestructor )
 			{
 				continue;
 			}
-
-			if ( bOverloaded )
+			else if ( bConstructor )
+			{
+				auto pConstr = dyn_cast<CXXConstructorDecl>( pMethod );
+				if ( !pConstr->isCopyOrMoveConstructor() )
+				{
+					init.Add( pConstr );
+				}
+			}
+			else if ( bOverloaded )
 			{
 				compare.Add( pMethod->getOverloadedOperator() );
 			}
@@ -580,6 +715,7 @@ void PyspotMatchHandler::PyTag::Flush( PyspotFrontendAction& action )
 		}
 	}
 
+	init.Flush( action );
 	compare.Flush( action );
 	methods.Flush( action );
 	members.Flush( action );
@@ -755,10 +891,10 @@ void Printer::printBindingsSource( StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
-	auto include = "#include \"" + name.slice(4, name.size() - 3 ) + "h\"\n\n";
+	auto include = "#include \"" + name.slice(4, name.size() - 3 ) + "h\"\n\n#include <Python.h>\n\n";
 	auto source = include.str();
 
-	//
+	// Class binding definitions
 	for ( auto& def : m_ClassDefinitions )
 	{
 		source += def;

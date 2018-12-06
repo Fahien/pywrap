@@ -238,6 +238,12 @@ class PyspotMatchHandler : public ast_matchers::MatchFinder::MatchCallback
 	struct PyInit : PyDecl
 	{
 		PyInit( const PyTag& );
+
+		void Add( const CXXConstructorDecl* );
+
+		void Flush( PyspotFrontendAction& );
+
+		const PyTag& owner;
 	};
 
 	struct PyAccessors : PyDecl

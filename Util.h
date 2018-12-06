@@ -110,7 +110,7 @@ static std::string to_c( std::string type, const std::string& name )
 	{
 		return "PyUnicode_AsUTF8( " + name + " )";
 	}
-	if ( type == "std::string" )
+	if ( type.find( "std::string" ) != std::string::npos )
 	{
 		return "PyUnicode_AsUTF8( " + name + " )";
 	}
