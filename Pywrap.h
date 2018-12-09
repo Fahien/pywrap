@@ -79,9 +79,9 @@ class PyspotFrontendAction : public ASTFrontendAction
   public:
 	PyspotFrontendAction();
 
-	const std::vector<std::pair<std::string, std::string>>& GetGlobalIncludes() const { return m_GlobalIncludes; }
+	const std::vector<std::string>& GetGlobalIncludes() const { return m_GlobalIncludes; }
 
-	void AddGlobalInclude( const std::string& searchPath, const std::string& fileName );
+	void AddGlobalInclude( const std::string& searchPath );
 	void AddClassInclude( const std::string& include )   { m_Printer.AddClassInclude( include ); }
 	void AddClassDeclaration( const std::string& str )   { m_Printer.AddClassDeclaration( str ); }
 	void AddClassDefinition( const std::string& str )    { m_Printer.AddClassDefinition( str ); }
@@ -103,32 +103,7 @@ class PyspotFrontendAction : public ASTFrontendAction
   private:
 	Printer& m_Printer;
 
-	std::vector<std::pair<std::string, std::string>> m_GlobalIncludes;
-};
-
-
-/// @brief Preprocessor callback for getting global include paths
-class IncludeFinder : public PPCallbacks
-{
-  public:
-	IncludeFinder( PyspotFrontendAction& frontend )
-	:	m_Frontend { frontend }
-	{}
-
-	/// @brief Handles an #include
-	void InclusionDirective( SourceLocation,
-	                         const Token&,
-	                         StringRef,
-	                         bool,
-	                         CharSourceRange,
-	                         const FileEntry*,
-	                         StringRef,
-	                         StringRef,
-	                         const Module*,
-	                         SrcMgr::CharacteristicKind ) override;
-
-  private:
-	PyspotFrontendAction& m_Frontend;
+	std::vector<std::string> m_GlobalIncludes;
 };
 
 

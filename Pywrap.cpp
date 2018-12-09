@@ -1,5 +1,7 @@
 #include "Pywrap.h"
 
+#include "clang\Lex\HeaderSearch.h"
+
 
 Printer g_Printer;
 
@@ -42,9 +44,8 @@ std::string PyspotMatchHandler::getIncludePath( const Decl* const pDecl )
 	pyspot::replace_all( location, "\\", "/" );
 
 	// Remove include directories from path
-	for ( auto& pair : m_Frontend.GetGlobalIncludes() )
+	for ( auto& path : m_Frontend.GetGlobalIncludes() )
 	{
-		auto& path = pair.first;
 		auto found = location.find( path );
 
 		if ( found == 0 )
@@ -782,29 +783,6 @@ void PyspotConsumer::HandleTranslationUnit( ASTContext& context )
 }
 
 
-/// @brief Handles an #include
-void IncludeFinder::InclusionDirective( SourceLocation hashLoc,
-                         const Token& includeTok,
-                         StringRef fileName,
-                         bool isAngled,
-                         CharSourceRange filenameRange,
-                         const FileEntry* file,
-                         StringRef searchPath,
-                         StringRef relativePath,
-                         const Module* imported,
-                         SrcMgr::CharacteristicKind fileType )
-{
-	// If we are handling an include in the main file
-	if ( m_Frontend.getCompilerInstance().getSourceManager().isInMainFile( hashLoc ) )
-	{
-		// Get the search path and the name of the include file
-		std::string strPath { searchPath };
-		pyspot::replace_all( strPath, "\\", "/" );
-		m_Frontend.AddGlobalInclude( strPath, fileName );
-	}
-}
-
-
 Printer::Printer()
 {}
 
@@ -815,9 +793,9 @@ PyspotFrontendAction::PyspotFrontendAction()
 }
 
 
-void PyspotFrontendAction::AddGlobalInclude( const std::string& searchPath, const std::string& fileName )
+void PyspotFrontendAction::AddGlobalInclude( const std::string& searchPath )
 {
-	m_GlobalIncludes.emplace_back( searchPath, fileName );
+	m_GlobalIncludes.emplace_back( searchPath );
 }
 
 
@@ -831,7 +809,13 @@ bool PyspotFrontendAction::BeginSourceFileAction( CompilerInstance& compiler )
 {
 	// Before executing the action get the global includes
 	auto& preprocessor = compiler.getPreprocessor();
-	preprocessor.addPPCallbacks( llvm::make_unique<IncludeFinder>( *this ) );
+	auto& info = preprocessor.getHeaderSearchInfo();
+	for ( auto dir = info.search_dir_begin(); dir != info.search_dir_end(); ++dir )
+	{
+		std::string directory = dir->getName();
+		pyspot::replace_all( directory, "\\", "/" );
+		AddGlobalInclude( directory );
+	}
 
 	return FrontendAction::BeginSourceFileAction( compiler );
 }
