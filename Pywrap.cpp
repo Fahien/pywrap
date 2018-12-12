@@ -452,11 +452,19 @@ PyspotMatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const CXXMethodDecl*
 			methodDecl.definition += " " + paramName + " {};\n";
 			callArglist += paramName + ", ";
 		}
+		else if ( pType->isPointerType() )
+		{
+			auto pPointeeType = pType->getPointeeOrArrayElementType();
+			if ( pPointeeType->isAnyCharacterType() )
+			{
+				methodDecl.definition += "PyObject* " + paramName + ";\n";
+				callArglist += pyspot::to_c( pParam->getType().withoutLocalFastQualifiers().getAsString(), paramName ) + ", ";
+			}
+		}
 		else
 		{
 			// Wrapper
-			methodDecl.definition += "_PyspotWrapper*";
-			methodDecl.definition += " " + paramName + " {};\n";
+			methodDecl.definition += "_PyspotWrapper* " + paramName + " {};\n";
 			// Get type as pointer
 			auto paramType = pParam->getType().withoutLocalFastQualifiers().getAsString();
 			if (paramType.back() == '&')
@@ -483,7 +491,7 @@ PyspotMatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const CXXMethodDecl*
 	methodDecl.definition += "\t" + fmt + "|\" };\n\n";
 
 	methodDecl.definition += "\tif ( !PyArg_ParseTupleAndKeywords( pArgs, pKwds, "
-		+ fmtName + ", " + kwlistName + arglist + " ) )\n\t{\n\t\treturn Py_None;\n\t}\n\n";
+		+ fmtName + ", " + kwlistName + arglist + " ) )\n\t{\n\t\tPy_INCREF( Py_None );\n\t\treturn Py_None;\n\t}\n\n";
 
 	// Get pData
 	methodDecl.definition += "\tauto pData = reinterpret_cast<" + pyTag.qualifiedName + "*>( pSelf->pData );\n";
@@ -493,7 +501,7 @@ PyspotMatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const CXXMethodDecl*
 	if ( pMethod->getReturnType().getTypePtr()->isVoidType() )
 	{
 		methodDecl.definition += "\t" + call + ";\n"
-			"\treturn Py_None;\n}\n\n";
+			"\tPy_INCREF( Py_None );\n\treturn Py_None;\n}\n\n";
 	}
 	else
 	{
@@ -726,7 +734,7 @@ void PyspotMatchHandler::PyTag::Flush( PyspotFrontendAction& action )
 	// Class registration
 	auto reg = "\t// Register " + name + "\n"
 		"\tif ( PyType_Ready( &" + typeObject.name + " ) < 0 )\n"
-		"\t{\n\t\treturn Py_None;\n\t}\n"
+		"\t{\n\t\tPy_INCREF( Py_None );\n\t\treturn Py_None;\n\t}\n"
 		"\tPy_INCREF( &" + typeObject.name + " );\n"
 		"\tPyModule_AddObject( pModule, \"" + name
 		+ "\" , reinterpret_cast<PyObject*>( &" + typeObject.name + " ) );\n\n";
@@ -953,7 +961,7 @@ void Printer::printExtensionSource( StringRef name )
 		"PyMODINIT_FUNC PyInit_extension()\n{\n"
 		"\t// Create the module\n"
 		"\tPyObject* pModule { PyModule_Create( &g_sModuleDef ) };\n"
-		"\tif ( pModule == nullptr )\n\t{\n\t\treturn Py_None;\n\t}\n\n"
+		"\tif ( pModule == nullptr )\n\t{\n\t\tPy_INCREF( Py_None );\n\t\treturn Py_None;\n\t}\n\n"
 		"\t// Module exception\n"
 		"\tg_pPyspotError = PyErr_NewException( g_aPyspotErrorName, nullptr, nullptr );\n"
 		"\tPy_INCREF( g_pPyspotError );\n"
