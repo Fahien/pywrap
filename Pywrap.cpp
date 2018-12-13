@@ -1,6 +1,10 @@
 #include "Pywrap.h"
 
-#include "clang\Lex\HeaderSearch.h"
+#include <memory>
+
+#include "clang/Lex/HeaderSearch.h"
+#include "clang/Driver/Options.h"
+#include "llvm/Option/OptTable.h"
 
 
 Printer g_Printer;
@@ -33,6 +37,10 @@ std::string PyspotMatchHandler::toPyspotName( std::string name )
 
 		name = "Py" + name.substr( 0, found ) + name.substr( found + 2, name.length() - found - 2 );
 	}
+
+	std::replace(name.begin(), name.end(), '<', '_');
+	std::replace(name.begin(), name.end(), ',', '_');
+	std::replace(name.begin(), name.end(), '>', '_');
 
 	return name;
 }
@@ -67,10 +75,10 @@ std::string PyspotMatchHandler::getIncludePath( const Decl* const pDecl )
 }
 
 
-PyspotMatchHandler::PyTag::PyTag( const TagDecl* const pTagDecl )
+PyspotMatchHandler::PyTag::PyTag( const TagDecl* const pTagDecl, const std::string& templateArgs )
 :	pDecl { pTagDecl }
-,	name          { pDecl->getNameAsString() }
-,	qualifiedName { pDecl->getQualifiedNameAsString() }
+,	name          { pDecl->getNameAsString() + templateArgs }
+,	qualifiedName { pDecl->getQualifiedNameAsString() + templateArgs }
 ,	pyName        { toPyspotName( qualifiedName ) }
 ,	init       { *this }
 ,	destructor { *this }
@@ -757,7 +765,33 @@ void PyspotMatchHandler::run( const ast_matchers::MatchFinder::MatchResult& resu
 		return; // Not the right type
 	}
 
-	PyTag pyTag { pTag };
+	if ( auto pClass = dyn_cast<CXXRecordDecl>( pTag ) )
+	{
+		if ( auto pTemplate = pClass->getDescribedClassTemplate() )
+		{
+			for ( auto pSpec : pTemplate->specializations() )
+			{
+				auto specName = pSpec->getQualifiedNameAsString();
+				auto& list = pSpec->getTemplateInstantiationArgs();
+				std::string templateArgs = "<";
+				for ( auto arg : list.asArray() )
+				{
+					templateArgs += arg.getAsType().getAsString() + ",";
+				}
+				templateArgs[templateArgs.size() - 1] = '>';
+				handleTag( pTag, templateArgs );
+			}
+		}
+	}
+	else
+	{
+		handleTag( pTag );
+	}
+}
+
+void PyspotMatchHandler::handleTag( const TagDecl* pTag, const std::string& templateArgs )
+{
+	PyTag pyTag { pTag, templateArgs };
 
 	// Check if we have already processed it
 	if ( checkHandled( pyTag ) )
@@ -925,7 +959,7 @@ void Printer::printExtensionHeader( StringRef name )
 		// End extern C
 		"\n#ifdef __cplusplus\n} // extern \"C\"\n#endif // __cplusplus\n\n"
 
-		"PyMODINIT_FUNC PyInit_extension();\n\n"
+		"PyMODINIT_FUNC PyInit_" + m_ExtensionName + "();\n\n"
 
 		// End guards
 		"#endif // PYSPOT_EXTENSION_H_\n"
@@ -958,7 +992,7 @@ void Printer::printExtensionSource( StringRef name )
 		"\tnullptr,\n"
 		"};\n\n"
 		// Extension function
-		"PyMODINIT_FUNC PyInit_extension()\n{\n"
+		"PyMODINIT_FUNC PyInit_" + m_ExtensionName + "()\n{\n"
 		"\t// Create the module\n"
 		"\tPyObject* pModule { PyModule_Create( &g_sModuleDef ) };\n"
 		"\tif ( pModule == nullptr )\n\t{\n\t\tPy_INCREF( Py_None );\n\t\treturn Py_None;\n\t}\n\n"
@@ -1003,8 +1037,13 @@ int main( int argc, const char** argv )
 {
 	// Applied to all command-line options
 	llvm::cl::OptionCategory pyspotCategory { "Pyspot options" };
+	std::unique_ptr<llvm::opt::OptTable> optTable { clang::driver::createDriverOptTable() };
+	llvm::cl::opt<std::string> extensionName { "o", llvm::cl::desc( optTable->getOptionHelpText( ( clang::driver::options::OPT_o ) ) ) };
+
 	// Parse the command-line args passed to your code
 	tooling::CommonOptionsParser op { argc, argv, pyspotCategory };
+	g_Printer.SetExtensionName( extensionName.getValue() );
+
 	// Create a new Clang Tool instance (a LibTooling environment)
 	tooling::ClangTool tool { op.getCompilations(), op.getSourcePathList() };
 

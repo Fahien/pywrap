@@ -30,6 +30,7 @@ class Printer
   public:
 	Printer();
 
+	void SetExtensionName( const std::string& name )     { m_ExtensionName = name; }
 	void AddClassInclude( const std::string& include )   { m_ClassIncludes.emplace( include ); }
 	void AddClassDeclaration( const std::string& str )   { m_ClassDeclarations.emplace_back( str ); }
 	void AddClassDefinition( const std::string& str )    { m_ClassDefinitions.emplace_back( str ); }
@@ -60,6 +61,9 @@ class Printer
 	/// @brief Prints extension source
 	/// @param[in] name Path of the output file
 	void printExtensionSource( StringRef name );
+
+	/// Extension name
+	std::string m_ExtensionName { "extension" };
 
 	/// List of already handled class names
 	std::vector<std::string> m_Handled;
@@ -125,6 +129,8 @@ class PyspotMatchHandler : public ast_matchers::MatchFinder::MatchCallback
 	/// @brief Handles a match
 	/// @param[in] result Match result for pyspot attribute
 	virtual void run( const ast_matchers::MatchFinder::MatchResult& );
+
+	void handleTag( const TagDecl* pTag, const std::string& templateArgs = "" );
 
 	virtual void onEndOfTranslationUnit() {}
 
@@ -255,7 +261,7 @@ class PyspotMatchHandler : public ast_matchers::MatchFinder::MatchCallback
 
 	struct PyTag
 	{
-		PyTag( const TagDecl* const );
+		PyTag( const TagDecl* const, const std::string& templateArgs = "" );
 
 		/// @return Class decl pointer if it is an enum, or nullptr
 		const CXXRecordDecl* AsClass() const;
