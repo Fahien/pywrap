@@ -2,12 +2,19 @@
 #define PYSPOT_UTIL_H_
 
 #include <string>
+#include <unordered_map>
 
+#include <clang/AST/ASTContext.h>
 #include "clang/AST/Type.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/QualTypeNames.h"
 
 
 namespace pyspot
 {
+
+// TODO improve it using proper Types
+using TemplateMap = std::unordered_map<std::string, clang::TemplateArgument*>;
 
 
 template<typename T>
@@ -23,7 +30,7 @@ inline ConstIterator<Container> find( const Container& container, const Type& va
 }
 
 
-static void replace_all( std::string& str, const StringRef& from, const StringRef& to )
+inline void replace_all( std::string& str, const StringRef& from, const StringRef& to )
 {
 	size_t start_pos = 0;
 	while ( ( start_pos = str.find( from, start_pos ) ) != std::string::npos )
@@ -35,7 +42,7 @@ static void replace_all( std::string& str, const StringRef& from, const StringRe
 }
 
 
-static std::string replace_all( const std::string& str, const StringRef& from, const StringRef& to )
+inline std::string replace_all( const std::string& str, const StringRef& from, const StringRef& to )
 {
 	std::string retstr { str };
 	replace_all( retstr, from, to );
@@ -43,7 +50,7 @@ static std::string replace_all( const std::string& str, const StringRef& from, c
 }
 
 
-static std::string to_python( std::string type, const std::string& name )
+inline std::string to_python( std::string type, const std::string& name )
 {
 	if ( type == "_Bool" )
 	{
@@ -84,7 +91,7 @@ static std::string to_python( std::string type, const std::string& name )
 }
 
 
-static std::string to_c( std::string type, const std::string& name )
+inline std::string to_c( std::string type, const std::string& name )
 {
 	if ( type == "_Bool" )
 	{
@@ -125,26 +132,67 @@ static std::string to_c( std::string type, const std::string& name )
 }
 
 
-std::string to_parser( const clang::Type* pType )
+inline std::string to_parser( const clang::QualType& type )
 {
-	if ( pType->isIntegerType() )
+	if ( type->isIntegerType() )
 	{
 		return "i";
 	}
-	if ( pType->isFloatingType() )
+	if ( type->isFloatingType() )
 	{
 		return "f";
 	}
-	if ( pType->isUnsignedIntegerOrEnumerationType() )
+	if ( type->isUnsignedIntegerOrEnumerationType() )
 	{
 		return "I";
 	}
-	if ( pType->isRealFloatingType() )
+	if ( type->isRealFloatingType() )
 	{
 		return "d";
 	}
 
 	return "O";
+}
+
+
+inline std::string to_string( const clang::QualType& type, const TemplateMap& tMap, const clang::ASTContext& ctx )
+{
+	std::string ret = clang::TypeName::getFullyQualifiedType( type, ctx ).getAsString();
+	
+	const clang::TemplateSpecializationType* pTemplType;
+
+	if ( type->isReferenceType() )
+	{
+		pTemplType = type.getNonReferenceType()->getAs<clang::TemplateSpecializationType>();
+	}
+	else if ( type->isPointerType() )
+	{
+		pTemplType = type->getPointeeType()->getAs<clang::TemplateSpecializationType>();
+	}
+	else
+	{
+		pTemplType = type->getAs<clang::TemplateSpecializationType>();
+	}
+
+	if ( pTemplType )
+	{
+		auto tail = ret.substr( ret.find_last_of( '>' ) + 1 );
+
+		ret = ret.substr( 0, ret.find( '<' ) + 1 );
+		for ( auto arg : pTemplType->template_arguments() )
+		{
+			auto argName = arg.getAsType().getAsString(); // T!
+
+			auto it = tMap.find( argName );
+			assert( it != tMap.end() && "Template parameter not found" );
+
+			ret += it->second->getAsType().getAsString() + ",";
+		}
+		ret[ret.length() - 1] = '>';
+		ret += tail;
+	}
+
+	return ret;
 }
 
 
