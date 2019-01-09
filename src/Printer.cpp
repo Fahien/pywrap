@@ -59,7 +59,7 @@ void Printer::printBindingsSource( StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
-	auto include = "#include \"" + name.slice(4, name.size() - 3 ) + "h\"\n\n#include <Python.h>\n\n";
+	auto include = "#include \"" + name.slice( 4, name.size() - 3 ) + "h\"\n\n#include <Python.h>\n\n";
 	auto source = include.str();
 
 	// Class binding definitions
@@ -116,7 +116,7 @@ void Printer::printExtensionSource( StringRef name )
 	OPEN_FILE_STREAM( file, name );
 
 	std::string source {
-		"#include \"" + name.slice(4, name.size() - 3 ).str() + "h\"\n\n"
+		"#include \"" + name.slice( 4, name.size() - 3 ).str() + "h\"\n\n"
 		"#include \"pyspot/Bindings.h\"\n\n"
 		"PyObject* g_pPyspotError = nullptr;\n"
 		"char g_aPyspotErrorName[] { \"pyspot.error\" };\n"

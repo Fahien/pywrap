@@ -30,7 +30,7 @@ bool FrontendAction::BeginSourceFileAction( clang::CompilerInstance& compiler )
 	auto& info = preprocessor.getHeaderSearchInfo();
 	for ( auto dir = info.search_dir_begin(); dir != info.search_dir_end(); ++dir )
 	{
-		std::string directory = dir->getName();
+		auto directory = dir->getName();
 		replace_all( directory, "\\", "/" );
 		AddGlobalInclude( directory );
 	}

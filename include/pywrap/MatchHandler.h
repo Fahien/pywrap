@@ -34,7 +34,7 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 	/// @paramp[in] tmap A template map (parameter, argument)
 	void handleTag( const clang::TagDecl*, TemplateMap&& tMap = TemplateMap{} );
 
-	virtual void onEndOfTranslationUnit() {}
+	virtual void onEndOfTranslationUnit();
 
   private:
 
@@ -89,10 +89,12 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 	{
 		PyMethods( const PyTag& );
 
-		/// Number of fields
-		size_t count = 0;
+		/// List of methods
+		std::vector<PyMethod> methods;
 
-		void Add( const PyMethod& );
+		/// Adds a method to the list
+		/// @return Whether it has been successful or not
+		bool Add( const PyMethod& );
 		void Flush( FrontendAction& action );
 	};
 
@@ -100,6 +102,7 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 	{
 		PyField( const PyTag&, const clang::FieldDecl* const );
 
+		const clang::FieldDecl* pField;
 		const PyTag& owner;
 		PyDecl decl;
 		std::string name; // field name
@@ -240,6 +243,9 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 
 	/// Current working directory
 	std::string m_Cwd;
+
+	/// Templates decls
+	std::vector<clang::ClassTemplateDecl*> m_Templates;
 };
 
 

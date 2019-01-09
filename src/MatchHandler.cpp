@@ -1,5 +1,7 @@
 #include "pywrap/MatchHandler.h"
 
+#include <sstream>
+
 namespace pyspot
 {
 
@@ -90,17 +92,24 @@ MatchHandler::PyTag::PyTag( const clang::ASTContext* pCtx, const clang::TagDecl*
 
 std::string MatchHandler::PyTag::createAngledArgs()
 {
-	std::string ret { "<" };
+	std::ostringstream os {};
 
-	for ( auto& kv : m_TemplateMap )
+	if ( pDecl->isTemplated() )
 	{
-		// Argument type
-		auto pArg = kv.second;
-		ret += pArg->getAsType().getAsString() + ",";
+		os << "<";
+		for ( auto& kv : m_TemplateMap )
+		{
+			// Argument type
+			auto pArg = kv.second;
+			os << pArg->getAsType().getAsString() << ",";
+		}
+
+		auto ret = os.str();
+		ret[ret.size() - 1] = '>';
+		return ret;
 	}
 
-	ret[ret.size() - 1] = '>';
-	return ret;
+	return os.str();
 }
 
 
@@ -153,9 +162,10 @@ MatchHandler::PyDestructor::PyDestructor( const PyTag& pyTag )
 
 
 MatchHandler::PyField::PyField( const PyTag& pyTag, const clang::FieldDecl* const pField )
-:	owner { pyTag }
-,	name  { pField->getNameAsString() }
-,	type  { pField->getType().getAsString() }
+:	pField { pField }
+,	owner  { pyTag }
+,	name   { pField->getNameAsString() }
+,	type   { pField->getType().getAsString() }
 {
 	decl.name = "g_a" + pyTag.pyName + "_" + name;
 	decl.declaration = "extern char " + decl.name + "[" + std::to_string( name.length() + 1) + "];\n\n";
@@ -175,7 +185,7 @@ MatchHandler::PyGetter::PyGetter( PyField& field )
 	decl.declaration = sign + ";\n\n";
 	decl.definition  = sign + "\n{\n\tauto pData = reinterpret_cast<" + field.owner.qualifiedName
 		+ "*>( pSelf->pData );\n\treturn "
-		+ pyspot::to_python( field.type, "pData->" + field.name ) + ";\n}\n\n";
+		+ pyspot::to_python( field.pField->getType(), "pData->" + field.name, field.owner.GetTemplateMap(), *field.owner.pContext ) + ";\n}\n\n";
 }
 
 
@@ -454,20 +464,30 @@ MatchHandler::PyMethods::PyMethods( const PyTag& pyTag )
 }
 
 
-void MatchHandler::PyMethods::Add( const PyMethod& method )
+bool MatchHandler::PyMethods::Add( const PyMethod& method )
 {
+	// Check whether we already have a method with this name
+	auto it = std::find_if( std::begin( methods ), std::end( methods ),
+	     [&method]( const PyMethod& m ) -> bool { return m.qualifiedName == method.qualifiedName; } );
+	if ( it != std::end( methods ) )
+	{
+		return false;
+	}
+
 	// Add it to the methods def
 	definition += "\t{\n\t\t" + method.nameDecl.name + ",\n"
 		+ "\t\treinterpret_cast<PyCFunction>( " + method.methodDecl.name + " ),\n"
 		+ "\t\tMETH_VARARGS | METH_KEYWORDS,\n"
 		+ "\t\t\"" + method.qualifiedName + "\"\n\t},\n";
-	++count;
+	
+	methods.emplace_back( method );
+	return true;
 }
 
 
 void MatchHandler::PyMethods::Flush( FrontendAction& action )
 {
-	declaration += std::to_string( count + 1 ) + "];\n\n";
+	declaration += std::to_string( methods.size() + 1 ) + "];\n\n";
 	definition += "\t{ nullptr } // sentinel\n};\n\n";
 	PyDecl::Flush( action );
 }
@@ -581,16 +601,24 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 	}
 	else
 	{
-		auto returnType = pyspot::to_string( pMethod->getReturnType(), pyTag.GetTemplateMap(), *pyTag.pContext );
+		auto trueType = pyspot::to_type( pMethod->getReturnType(), pyTag.GetTemplateMap() );
+		auto returnType = pyspot::to_string( trueType, pyTag.GetTemplateMap(), *pyTag.pContext );
 		auto anglePos = returnType.find( '<' );
 		if ( anglePos != std::string::npos )
 		{
 			if ( owner.qualifiedName.find( returnType.substr( 0, anglePos ) ) != std::string::npos )
 			{
 				returnType = owner.qualifiedName;
+				methodDecl.definition += "\treturn pyspot::Wrapper<" + returnType + ">{ ";
+				if ( trueType->isReferenceType() || trueType->isPointerType() )
+				{
+					methodDecl.definition += "&";
+				}
+				methodDecl.definition += call + " }.GetIncref();\n}\n\n";
+				return;
 			}
 		}
-		methodDecl.definition += "\treturn " + pyspot::to_python( returnType, call ) + ";\n}\n\n";
+		methodDecl.definition += "\treturn " + pyspot::to_python( pMethod->getReturnType(), call, owner.GetTemplateMap(), *owner.pContext ) + ";\n}\n\n";
 	}
 }
 
@@ -802,8 +830,10 @@ void MatchHandler::PyTag::Flush( FrontendAction& action )
 			else
 			{
 				PyMethod method { *this, pMethod };
-				methods.Add( method );
-				method.Flush( action );
+				if ( methods.Add( method ) )
+				{
+					method.Flush( action );
+				}
 			}
 		}
 	}
@@ -847,6 +877,21 @@ void MatchHandler::handleTag( const clang::TagDecl* pTag, TemplateMap&& tMap )
 	pyTag.Flush( m_Frontend );
 }
 
+void MatchHandler::onEndOfTranslationUnit()
+{
+//	for ( auto pTemplate : m_Templates )
+//	{
+//		// Get its specializations
+//		for ( auto pSpec : pTemplate->specializations() )
+//		{
+//			pSpec->startDefinition();
+//			pSpec->completeDefinition();
+//			pSpec->dumpColor();
+//			auto name = pSpec->getQualifiedNameAsString();
+//			handleTag( pSpec );
+//		}
+//	}
+}
 
 void MatchHandler::run( const clang::ast_matchers::MatchFinder::MatchResult& result )
 {
@@ -866,12 +911,22 @@ void MatchHandler::run( const clang::ast_matchers::MatchFinder::MatchResult& res
 		// It it is a template
 		if ( auto pTemplate = pClass->getDescribedClassTemplate() )
 		{
+			//m_Templates.emplace_back( pTemplate );
+
 			// Get its parameters
 			auto params = pTemplate->getTemplateParameters()->asArray();
 
 			// Get its specializations
 			for ( auto pSpec : pTemplate->specializations() )
 			{
+				//if ( pSpec->getPointOfInstantiation().isValid() )
+				//{
+				//	handleTag( pSpec );
+				//}
+				//continue;
+				pSpec->startDefinition();
+				pSpec->completeDefinition();
+
 				TemplateMap templateMap;
 
 				auto args = pSpec->getTemplateArgs().asArray();
