@@ -5,25 +5,24 @@
 #include <unordered_map>
 
 #include <clang/AST/ASTContext.h>
-#include "clang/AST/Type.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/QualTypeNames.h"
+#include "clang/AST/Type.h"
 
 
 namespace pyspot
 {
-
 // TODO improve it using proper Types
 using TemplateMap = std::unordered_map<std::string, clang::TemplateArgument*>;
 
 
-template<typename T>
+template <typename T>
 using Iterator = typename T::iterator;
-template<typename T>
+template <typename T>
 using ConstIterator = typename T::const_iterator;
 
 
-template<typename Container, typename Type>
+template <typename Container, typename Type>
 inline ConstIterator<Container> find( const Container& container, const Type& val )
 {
 	return std::find( std::begin( container ), std::end( container ), val );
@@ -44,7 +43,7 @@ inline void replace_all( std::string& str, const StringRef& from, const StringRe
 
 inline std::string replace_all( const std::string& str, const StringRef& from, const StringRef& to )
 {
-	std::string retstr { str };
+	std::string retstr{ str };
 	replace_all( retstr, from, to );
 	return retstr;
 }
@@ -52,7 +51,7 @@ inline std::string replace_all( const std::string& str, const StringRef& from, c
 
 inline std::string to_string( const clang::QualType& type, const TemplateMap& tMap, const clang::ASTContext& ctx )
 {
-	auto typ = clang::TypeName::getFullyQualifiedType( type, ctx );
+	auto typ        = clang::TypeName::getFullyQualifiedType( type, ctx );
 	auto typeString = typ.getAsString();
 
 	std::string ret;
@@ -62,15 +61,14 @@ inline std::string to_string( const clang::QualType& type, const TemplateMap& tM
 		ret += "const ";
 	}
 
-	const clang::TemplateSpecializationType* pTemplType { nullptr };
+	const clang::TemplateSpecializationType* pTemplType{ nullptr };
 
 	if ( typ->isReferenceType() )
 	{
 		typ = typ.getNonReferenceType();
-	}
-	else if ( typ->isPointerType() )
+	} else if ( typ->isPointerType() )
 	{
-		//typeTail = "*";
+		// typeTail = "*";
 		typ = typ->getPointeeType();
 	}
 
@@ -83,7 +81,7 @@ inline std::string to_string( const clang::QualType& type, const TemplateMap& tM
 		ret += typeString.substr( 0, typeString.find( '<' ) + 1 );
 		for ( auto arg : pTemplType->template_arguments() )
 		{
-			auto argName = arg.getAsType().getUnqualifiedType().getAsString(); // T!
+			auto argName = arg.getAsType().getUnqualifiedType().getAsString();  // T!
 
 			auto it = tMap.find( argName );
 			assert( it != tMap.end() && "Template parameter not found" );
@@ -92,14 +90,12 @@ inline std::string to_string( const clang::QualType& type, const TemplateMap& tM
 		}
 		ret[ret.length() - 1] = '>';
 		ret += typeTail + tail;
-	}
-	else if ( typ->isTemplateTypeParmType() )
+	} else if ( typ->isTemplateTypeParmType() )
 	{
 		auto it = tMap.find( typ.getUnqualifiedType().getAsString() );
 		assert( it != tMap.end() && "Template parameter not found" );
 		ret += it->second->getAsType().getAsString() + typeTail;
-	}
-	else
+	} else
 	{
 		// Reset ret
 		ret = typeString;
@@ -116,15 +112,14 @@ inline clang::QualType to_type( const clang::QualType& type, const TemplateMap& 
 	if ( type->isReferenceType() )
 	{
 		tempType = type.getNonReferenceType();
-	}
-	else if ( type->isPointerType() )
+	} else if ( type->isPointerType() )
 	{
 		tempType = type->getPointeeType();
 	}
 
 	if ( tempType->isTemplateTypeParmType() )
 	{
-		auto argName = tempType.getUnqualifiedType().getAsString(); // T!
+		auto argName = tempType.getUnqualifiedType().getAsString();  // T!
 
 		auto it = tMap.find( argName );
 		assert( it != tMap.end() && "Template parameter not found" );
@@ -136,7 +131,8 @@ inline clang::QualType to_type( const clang::QualType& type, const TemplateMap& 
 }
 
 
-inline std::string to_python( const clang::QualType& type, const std::string& name, const TemplateMap& tMap, const clang::ASTContext& ctx )
+inline std::string to_python( const clang::QualType& type, const std::string& name, const TemplateMap& tMap,
+                              const clang::ASTContext& ctx )
 {
 	auto realType = to_type( type, tMap );
 
@@ -165,8 +161,7 @@ inline std::string to_python( const clang::QualType& type, const std::string& na
 	if ( realType.getAsString().find( "std::string" ) != std::string::npos )
 	{
 		return "PyUnicode_FromString( " + name + ".c_str() )";
-	}
-	else
+	} else
 	{
 		auto ret = "pyspot::Wrapper<" + pyspot::to_string( type, tMap, ctx ) + ">{ ";
 		if ( type->isReferenceType() )
@@ -203,13 +198,12 @@ inline std::string to_c( std::string type, const std::string& name )
 	}
 	if ( type == "const char *" )
 	{
-		return "PyUnicode_AsUTF8( " + name + " )";
+		return "pyspot::String{ " + name + " }.ToCString()";
 	}
 	if ( type.find( "std::string" ) != std::string::npos )
 	{
-		return "PyUnicode_AsUTF8( " + name + " )";
-	}
-	else
+		return "pyspot::String{ " + name + " }.ToCString()";
+	} else
 	{
 		if ( type.substr( 0, 5 ) == "class" )
 		{
@@ -243,7 +237,6 @@ inline std::string to_parser( const clang::QualType& type )
 }
 
 
+}  // namespace pyspot
 
-} // namespace pyspot
-
-#endif // PYSPOT_UTIL_H_
+#endif  // PYSPOT_UTIL_H_

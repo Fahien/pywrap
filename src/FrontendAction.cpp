@@ -9,12 +9,7 @@
 
 namespace pyspot
 {
-
-
-void FrontendAction::AddGlobalInclude( const std::string& searchPath )
-{
-	m_GlobalIncludes.emplace_back( searchPath );
-}
+void FrontendAction::AddGlobalInclude( const std::string& searchPath ) { m_GlobalIncludes.emplace_back( searchPath ); }
 
 
 std::unique_ptr<clang::ASTConsumer> FrontendAction::CreateASTConsumer( clang::CompilerInstance& compiler, StringRef file )
@@ -27,7 +22,7 @@ bool FrontendAction::BeginSourceFileAction( clang::CompilerInstance& compiler )
 {
 	// Before executing the action get the global includes
 	auto& preprocessor = compiler.getPreprocessor();
-	auto& info = preprocessor.getHeaderSearchInfo();
+	auto& info         = preprocessor.getHeaderSearchInfo();
 	for ( auto dir = info.search_dir_begin(); dir != info.search_dir_end(); ++dir )
 	{
 		auto directory = dir->getName();
@@ -39,4 +34,4 @@ bool FrontendAction::BeginSourceFileAction( clang::CompilerInstance& compiler )
 }
 
 
-} // namespace pyspot
+}  // namespace pyspot

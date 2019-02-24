@@ -8,7 +8,6 @@
 
 namespace pyspot
 {
-
 // @brief Implementation of the ASTConsumer interface for reading an AST produced
 // by the Clang parser. It registers a couple of matchers and runs them on the AST.
 class Consumer : public clang::ASTConsumer
@@ -25,4 +24,4 @@ class Consumer : public clang::ASTConsumer
 };
 
 
-} // namespace pyspot
+}  // namespace pyspot

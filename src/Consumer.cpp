@@ -2,10 +2,7 @@
 
 namespace pyspot
 {
-
-
-Consumer::Consumer( FrontendAction& frontend )
-:	m_Handler { frontend }
+Consumer::Consumer( FrontendAction& frontend ) : m_Handler{ frontend }
 {
 	// Match classes with pyspot attribute
 	auto hasPyspot = clang::ast_matchers::hasAttr( clang::attr::Pyspot );
@@ -21,4 +18,4 @@ void Consumer::HandleTranslationUnit( clang::ASTContext& context )
 }
 
 
-} // namespace pyspot
+}  // namespace pyspot

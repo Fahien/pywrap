@@ -1,9 +1,6 @@
-set( LLVM_LINK_COMPONENTS
-	Support
-)
+set( LLVM_LINK_COMPONENTS Support )
 
-set( PYWRAP pywrap )
-add_clang_executable( ${PYWRAP}
+add_clang_executable( pywrap
 	src/Printer.cpp
 	src/FrontendAction.cpp
 	src/Consumer.cpp
@@ -11,10 +8,9 @@ add_clang_executable( ${PYWRAP}
 	src/Pywrap.cpp
 )
 
-target_include_directories( ${PYWRAP} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include )
+target_include_directories( pywrap PUBLIC include )
 
-target_link_libraries( ${PYWRAP}
-	PRIVATE
+target_link_libraries( pywrap PRIVATE
 	clangAST
 	clangASTMatchers
 	clangBasic

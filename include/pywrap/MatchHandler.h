@@ -9,7 +9,6 @@
 
 namespace pyspot
 {
-
 class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 {
   public:
@@ -34,10 +33,7 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 	/// @paramp[in] tmap A template map (parameter, argument)
 	void handleTag( const clang::TagDecl*, TemplateMap&& tMap = TemplateMap{} );
 
-	virtual void onEndOfTranslationUnit();
-
   private:
-
 	/// @param[in] manager Context SourceManager
 	/// @param[in] pDecl Pointer to the decl we want to get the path
 	/// @return A proper include path
@@ -74,9 +70,9 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 		PyMethod( const PyTag&, const clang::CXXMethodDecl* const );
 
 		const PyTag& owner;
-		std::string name;
-		std::string qualifiedName;
-		
+		std::string  name;
+		std::string  qualifiedName;
+
 		/// Array of chars with the name
 		PyDecl nameDecl;
 		/// Method wrapper
@@ -103,10 +99,10 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 		PyField( const PyTag&, const clang::FieldDecl* const );
 
 		const clang::FieldDecl* pField;
-		const PyTag& owner;
-		PyDecl decl;
-		std::string name; // field name
-		std::string type;
+		const PyTag&            owner;
+		PyDecl                  decl;
+		std::string             name;  // field name
+		std::string             type;
 	};
 
 	struct PyGetter
@@ -186,7 +182,7 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 		std::string createAngledArgs();
 
 		/// Decl
-		const clang::ASTContext* pContext;
+		const clang::ASTContext*    pContext;
 		const clang::TagDecl* const pDecl;
 
 		/// Map template (parameter, argument)
@@ -249,4 +245,4 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 };
 
 
-} // namespace pyspot
+}  // namespace pyspot
