@@ -7,14 +7,14 @@
 #include "pywrap/Util.h"
 
 
-namespace pyspot
+namespace pywrap
 {
 void FrontendAction::AddGlobalInclude( const std::string& searchPath ) { m_GlobalIncludes.emplace_back( searchPath ); }
 
 
-std::unique_ptr<clang::ASTConsumer> FrontendAction::CreateASTConsumer( clang::CompilerInstance& compiler, StringRef file )
+std::unique_ptr<clang::ASTConsumer> FrontendAction::CreateASTConsumer( clang::CompilerInstance& compiler, llvm::StringRef file )
 {
-	return llvm::make_unique<Consumer>( *this );
+	return llvm::make_unique<Consumer>( modules, *this );
 }
 
 
@@ -34,4 +34,4 @@ bool FrontendAction::BeginSourceFileAction( clang::CompilerInstance& compiler )
 }
 
 
-}  // namespace pyspot
+}  // namespace pywrap

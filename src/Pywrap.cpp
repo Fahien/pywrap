@@ -16,17 +16,17 @@ int main( int argc, const char** argv )
 	llvm::cl::OptionCategory            pyspotCategory{ "Pyspot options" };
 	clang::tooling::CommonOptionsParser op{ argc, argv, pyspotCategory };
 	// This is going to write code for us
-	pyspot::Printer printer{ extensionNameOpt.getValue() };
+	pywrap::Printer printer{ extensionNameOpt.getValue() };
 
 	// Create a new Clang Tool instance (a LibTooling environment)
 	clang::tooling::ClangTool tool{ op.getCompilations(), op.getSourcePathList() };
 
 	// Run the Clang Tool, creating a new FrontendAction
-	pyspot::FrontendActionFactory factory{ printer };
+	pywrap::FrontendActionFactory factory{ printer };
 	auto                          result = tool.run( &factory );
 	if ( result == EXIT_SUCCESS )
 	{
-		printer.PrintOut();
+		printer.PrintOut( factory.get_modules() );
 	}
 
 	return result;

@@ -6,14 +6,14 @@
 #include "pywrap/FrontendAction.h"
 #include "pywrap/MatchHandler.h"
 
-namespace pyspot
+namespace pywrap
 {
 // @brief Implementation of the ASTConsumer interface for reading an AST produced
 // by the Clang parser. It registers a couple of matchers and runs them on the AST.
 class Consumer : public clang::ASTConsumer
 {
   public:
-	Consumer( FrontendAction& frontend );
+	Consumer( std::unordered_map<unsigned int, binding::Module>& m, FrontendAction& frontend );
 
 	void HandleTranslationUnit( clang::ASTContext& context ) override;
 
@@ -24,4 +24,4 @@ class Consumer : public clang::ASTConsumer
 };
 
 
-}  // namespace pyspot
+}  // namespace pywrap

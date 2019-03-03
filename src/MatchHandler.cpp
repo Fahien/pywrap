@@ -2,42 +2,27 @@
 
 #include <sstream>
 
-namespace pyspot
+#include "pywrap/binding/Function.h"
+#include "pywrap/binding/Module.h"
+
+namespace pywrap
 {
-MatchHandler::MatchHandler( FrontendAction& frontend ) : m_Frontend{ frontend }, m_Cwd{ getCwd() } {}
+MatchHandler::MatchHandler( std::unordered_map<unsigned int, binding::Module>& m, FrontendAction& frontend )
+    : modules{ m }, m_Frontend{ frontend }, m_Cwd{ getCwd() }
+{
+}
 
 std::string MatchHandler::getCwd()
 {
 	llvm::SmallString<64> aCwd;
 	llvm::sys::fs::current_path( aCwd );
-	return pyspot::replace_all( aCwd.str().str(), "\\", "/" );
-}
-
-std::string MatchHandler::toPyspotName( std::string name )
-{
-	while ( true )
-	{
-		// Search for "::"
-		auto found = name.find( "::" );
-		if ( found == std::string::npos )
-		{
-			break;
-		}
-
-		name = "Py" + name.substr( 0, found ) + name.substr( found + 2, name.length() - found - 2 );
-	}
-
-	std::replace( name.begin(), name.end(), '<', '_' );
-	std::replace( name.begin(), name.end(), ',', '_' );
-	std::replace( name.begin(), name.end(), '>', '_' );
-
-	return name;
+	return pywrap::replace_all( aCwd.str().str(), "\\", "/" );
 }
 
 std::string MatchHandler::getIncludePath( const clang::Decl* const pDecl )
 {
 	auto location = pDecl->getLocation().printToString( m_pContext->getSourceManager() );
-	pyspot::replace_all( location, "\\", "/" );
+	pywrap::replace_all( location, "\\", "/" );
 
 	// Remove include directories from path
 	for ( auto& path : m_Frontend.GetGlobalIncludes() )
@@ -69,7 +54,7 @@ MatchHandler::PyTag::PyTag( const clang::ASTContext* pCtx, const clang::TagDecl*
       m_AngledArgs{ createAngledArgs() },
       name{ pDecl->getNameAsString() + m_AngledArgs },
       qualifiedName{ pDecl->getQualifiedNameAsString() + m_AngledArgs },
-      pyName{ toPyspotName( qualifiedName ) },
+      pyName{ to_pyspot_name( qualifiedName ) },
       init{ *this },
       destructor{ *this },
       compare{ *this },
@@ -162,7 +147,7 @@ MatchHandler::PyGetter::PyGetter( PyField& field )
 	decl.declaration = sign + ";\n\n";
 	decl.definition  = sign + "\n{\n\tauto pData = reinterpret_cast<" + field.owner.qualifiedName +
 	                  "*>( pSelf->pData );\n\treturn " +
-	                  pyspot::to_python( field.pField->getType(), "pData->" + field.name, field.owner.GetTemplateMap(),
+	                  pywrap::to_python( field.pField->getType(), "pData->" + field.name, field.owner.GetTemplateMap(),
 	                                     *field.owner.pContext ) +
 	                  ";\n}\n\n";
 }
@@ -186,7 +171,7 @@ MatchHandler::PySetter::PySetter( PyField& field )
 	}
 
 	decl.definition += "\n\tauto pData = reinterpret_cast<" + field.owner.qualifiedName + "*>( pSelf->pData );\n\tpData->" +
-	                   field.name + " = " + pyspot::to_c( field.type, "pValue" ) + ";\n\treturn 0;\n}\n\n";
+	                   field.name + " = " + pywrap::to_c( field.type, "pValue" ) + ";\n\treturn 0;\n}\n\n";
 }
 
 MatchHandler::PyAccessors::PyAccessors( const PyTag& pyTag )
@@ -283,7 +268,7 @@ void MatchHandler::PyInit::Add( const clang::CXXConstructorDecl* pConstructor )
 				paramType = qualType.getAsString();
 			} else
 			{
-				paramType = pyspot::to_string( qualType, owner.GetTemplateMap(), *owner.pContext );
+				paramType = pywrap::to_string( qualType, owner.GetTemplateMap(), *owner.pContext );
 			}
 		}
 
@@ -297,7 +282,7 @@ void MatchHandler::PyInit::Add( const clang::CXXConstructorDecl* pConstructor )
 			--positionalCount;
 		}
 
-		fmt += pyspot::to_parser( qualType );
+		fmt += pywrap::to_parser( qualType );
 
 		definition += "\t\t";
 		if ( qualType->isBuiltinType() )
@@ -353,7 +338,7 @@ void MatchHandler::PyInit::Add( const clang::CXXConstructorDecl* pConstructor )
 				paramType = qualType.getAsString();
 			} else
 			{
-				paramType = pyspot::to_string( qualType, owner.GetTemplateMap(), *owner.pContext );
+				paramType = pywrap::to_string( qualType, owner.GetTemplateMap(), *owner.pContext );
 			}
 		}
 
@@ -369,7 +354,7 @@ void MatchHandler::PyInit::Add( const clang::CXXConstructorDecl* pConstructor )
 			}
 
 			// Pointer to data
-			definition += "\t\t\tauto " + dataName + " = " + pyspot::to_c( paramType, paramName ) + ";\n";
+			definition += "\t\t\tauto " + dataName + " = " + pywrap::to_c( paramType, paramName ) + ";\n";
 			constructorArgList += dataName;
 		}
 
@@ -504,11 +489,11 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 				paramType = qualType.getAsString();
 			} else
 			{
-				paramType = pyspot::to_string( qualType, pyTag.GetTemplateMap(), *pyTag.pContext );
+				paramType = pywrap::to_string( qualType, pyTag.GetTemplateMap(), *pyTag.pContext );
 			}
 		}
 
-		fmt += pyspot::to_parser( qualType );
+		fmt += pywrap::to_parser( qualType );
 
 		methodDecl.definition += "\t";
 		if ( qualType->isBuiltinType() )
@@ -522,7 +507,7 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 			if ( pPointeeType->isAnyCharacterType() )
 			{
 				methodDecl.definition += "PyObject* " + paramName + ";\n";
-				callArglist += pyspot::to_c( paramType, paramName ) + ", ";
+				callArglist += pywrap::to_c( paramType, paramName ) + ", ";
 			}
 		} else
 		{
@@ -567,15 +552,15 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 		                         "\tPy_INCREF( Py_None );\n\treturn Py_None;\n}\n\n";
 	} else
 	{
-		auto trueType   = pyspot::to_type( pMethod->getReturnType(), pyTag.GetTemplateMap() );
-		auto returnType = pyspot::to_string( trueType, pyTag.GetTemplateMap(), *pyTag.pContext );
+		auto trueType   = pywrap::to_type( pMethod->getReturnType(), pyTag.GetTemplateMap() );
+		auto returnType = pywrap::to_string( trueType, pyTag.GetTemplateMap(), *pyTag.pContext );
 		auto anglePos   = returnType.find( '<' );
 		if ( anglePos != std::string::npos )
 		{
 			if ( owner.qualifiedName.find( returnType.substr( 0, anglePos ) ) != std::string::npos )
 			{
 				returnType = owner.qualifiedName;
-				methodDecl.definition += "\treturn pyspot::Wrapper<" + returnType + ">{ ";
+				methodDecl.definition += "\treturn pywrap::Wrapper<" + returnType + ">{ ";
 				if ( trueType->isReferenceType() || trueType->isPointerType() )
 				{
 					methodDecl.definition += "&";
@@ -585,7 +570,7 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 			}
 		}
 		methodDecl.definition +=
-		    "\treturn " + pyspot::to_python( pMethod->getReturnType(), call, owner.GetTemplateMap(), *owner.pContext ) +
+		    "\treturn " + pywrap::to_python( pMethod->getReturnType(), call, owner.GetTemplateMap(), *owner.pContext ) +
 		    ";\n}\n\n";
 	}
 }
@@ -674,7 +659,7 @@ MatchHandler::PyEnums::PyEnums( const PyTag& pyTag )
 			auto name = value->getNameAsString();
 
 			definition += "\tPyDict_SetItemString( " + pyTag.typeObject.name + ".tp_dict, \"" + name +
-			              "\", pyspot::Wrapper<" + pyTag.qualifiedName + ">{ " + pyTag.qualifiedName + "::" + name +
+			              "\", pywrap::Wrapper<" + pyTag.qualifiedName + ">{ " + pyTag.qualifiedName + "::" + name +
 			              " }.GetIncref() );\n";
 		}
 	}
@@ -685,8 +670,8 @@ void MatchHandler::PyEnums::Flush( FrontendAction& action ) { action.AddEnumerat
 MatchHandler::WrapperConstructors::WrapperConstructors( const PyTag& pyTag, const std::string& objectName )
 {
 	// Generate Wrapper constructors template specializations
-	auto constructorName = "template<>\npyspot::Wrapper<" + pyTag.qualifiedName + ">::Wrapper( " + pyTag.qualifiedName;
-	auto pyObjectReady   = ":\tpyspot::Object { ( PyType_Ready( &" + objectName +
+	auto constructorName = "template<>\npywrap::Wrapper<" + pyTag.qualifiedName + ">::Wrapper( " + pyTag.qualifiedName;
+	auto pyObjectReady   = ":\tpywrap::Object { ( PyType_Ready( &" + objectName +
 	                     " ),\n"
 	                     " \t                   PyspotWrapper_New( &" +
 	                     objectName + ", nullptr, nullptr ) ) }\n";
@@ -734,7 +719,7 @@ void MatchHandler::WrapperConstructors::Flush( FrontendAction& action )
 bool MatchHandler::checkHandled( const PyTag& pyTag )
 {
 	// Check if we have already processed this
-	auto found  = pyspot::find( m_Frontend.GetHandled(), pyTag.qualifiedName );
+	auto found  = pywrap::find( m_Frontend.GetHandled(), pyTag.qualifiedName );
 	auto bFound = ( found != std::end( m_Frontend.GetHandled() ) );
 	if ( !bFound )
 	{
@@ -857,10 +842,57 @@ void MatchHandler::handleTag( const clang::TagDecl* pTag, TemplateMap&& tMap )
 	pyTag.Flush( m_Frontend );
 }
 
+
+void MatchHandler::generate_bindings( const clang::Decl* decl )
+{
+	// Switch according to the decl
+	if ( auto func_decl = clang::dyn_cast<clang::FunctionDecl>( decl ) )
+	{
+		// The function should be in a namespace
+		auto ctx = decl->getDeclContext();
+
+		assert( ctx && ctx->isNamespace() && "Function should be in a namespace" );
+		if ( auto namespace_decl = clang::dyn_cast<clang::NamespaceDecl>( ctx ) )
+		{
+			// Find the module
+			auto idns = decl->getIdentifierNamespace();
+			auto it   = modules.find( idns );
+			if ( it == modules.end() )
+			{
+				// Create it the first time
+				auto pr = modules.emplace( idns, binding::Module( namespace_decl ) );
+				if ( pr.second )  // success
+				{
+					it = pr.first;
+				}
+			}
+			auto& module = it->second;
+
+			// Add the function to the module
+			auto function = binding::Function( func_decl );
+			module.add( std::move( function ) );
+		}
+	}
+	// generate_enum_bindings
+	// generate_struct_bindings
+}
+
 void MatchHandler::run( const clang::ast_matchers::MatchFinder::MatchResult& result )
 {
 	// Save current context
 	m_pContext = result.Context;
+
+	if ( auto decl = result.Nodes.getNodeAs<clang::Decl>( "PyspotTag" ) )
+	{
+		if ( auto annotate = decl->getAttr<clang::AnnotateAttr>() )
+		{
+			if ( annotate->getAnnotation() == "pyspot" )
+			{
+				// We have found a decl with our pyspot annotation
+				generate_bindings( decl );
+			}
+		}
+	}
 
 	// Get Tag (super class)
 	auto pTag = result.Nodes.getNodeAs<clang::TagDecl>( "PyspotTag" );
@@ -868,6 +900,7 @@ void MatchHandler::run( const clang::ast_matchers::MatchFinder::MatchResult& res
 	{
 		return;  // Not the right type
 	}
+
 
 	// If it is a class
 	if ( auto pClass = clang::dyn_cast<clang::CXXRecordDecl>( pTag ) )
@@ -910,4 +943,4 @@ void MatchHandler::run( const clang::ast_matchers::MatchFinder::MatchResult& res
 	handleTag( pTag );
 }
 
-}  // namespace pyspot
+}  // namespace pywrap

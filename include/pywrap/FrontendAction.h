@@ -1,6 +1,8 @@
-#pragma once
+#ifndef PYWRAP_FRONTEND_ACTION_H_
+#define PYWRAP_FRONTEND_ACTION_H_
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <clang/Frontend/FrontendAction.h>
@@ -8,12 +10,17 @@
 
 #include "pywrap/Printer.h"
 
-namespace pyspot
+#include "pywrap/binding/Module.h"
+
+namespace pywrap
 {
 class FrontendAction : public clang::ASTFrontendAction
 {
   public:
-	FrontendAction( Printer& printer ) : m_Printer{ printer } {}
+	FrontendAction( std::unordered_map<unsigned int, binding::Module>& m, Printer& printer )
+	    : modules{ m }, m_Printer{ printer }
+	{
+	}
 
 	const std::vector<std::string>& GetGlobalIncludes() const { return m_GlobalIncludes; }
 
@@ -29,29 +36,41 @@ class FrontendAction : public clang::ASTFrontendAction
 
 	const std::vector<std::string>& GetHandled() const { return m_Printer.GetHandled(); }
 
-	/// @brief Creates a consumer
-	std::unique_ptr<clang::ASTConsumer> CreateASTConsumer( clang::CompilerInstance& compiler, StringRef file ) override;
+	/// Creates a consumer
+	std::unique_ptr<clang::ASTConsumer> CreateASTConsumer( clang::CompilerInstance& compiler,
+	                                                       llvm::StringRef          file ) override;
 
-	/// @brief Starts handling a source file
+	/// Starts handling a source file
 	bool BeginSourceFileAction( clang::CompilerInstance& compiler ) override;
 
 
   private:
+	/// Map to be populated by the consumer
+	std::unordered_map<unsigned int, binding::Module>& modules;
+
 	Printer& m_Printer;
 
 	std::vector<std::string> m_GlobalIncludes;
 };
 
 
+/// This factory creates an action which populates the modules map
 class FrontendActionFactory : public clang::tooling::FrontendActionFactory
 {
   public:
 	FrontendActionFactory( Printer& printer ) : m_Printer{ printer } {}
-	FrontendAction* create() override { return new FrontendAction( m_Printer ); }
+	FrontendAction* create() override { return new FrontendAction{ modules, m_Printer }; }
+
+	/// @return The modules created by the action
+	const std::unordered_map<unsigned int, binding::Module>& get_modules() const { return modules; };
 
   private:
 	Printer& m_Printer;
+
+	std::unordered_map<unsigned int, binding::Module> modules;
 };
 
 
-}  // namespace pyspot
+}  // namespace pywrap
+
+#endif  // PYWRAP_FRONTEND_ACTION_H_

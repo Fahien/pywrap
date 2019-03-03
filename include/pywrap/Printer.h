@@ -4,8 +4,9 @@
 
 #include <clang/Tooling/Tooling.h>
 
+#include <pywrap/binding/Module.h>
 
-namespace pyspot
+namespace pywrap
 {
 class Printer
 {
@@ -23,24 +24,26 @@ class Printer
 	const std::vector<std::string>& GetHandled() const { return m_Handled; }
 
 	/// @brief Finishes handling the files
-	void PrintOut();
+	void PrintOut( const std::unordered_map<unsigned int, binding::Module>& modules );
 
   private:
 	/// @brief Prints bindings header
 	/// @param[in] name Path of the output file
-	void printBindingsHeader( StringRef name );
+	void printBindingsHeader( llvm::StringRef name );
 
 	/// @brief Prints bindings source
 	/// @param[in] name Path of the output file
-	void printBindingsSource( StringRef name );
+	void printBindingsSource( llvm::StringRef name );
 
 	/// @brief Prints extension header
 	/// @param[in] name Path of the output file
-	void printExtensionHeader( StringRef name );
+	void printExtensionHeader( llvm::StringRef name );
 
 	/// @brief Prints extension source
 	/// @param[in] name Path of the output file
-	void printExtensionSource( StringRef name );
+	void printExtensionSource( llvm::StringRef name );
+
+	const std::unordered_map<unsigned int, binding::Module>* modules;
 
 	/// Extension name
 	const std::string m_ExtensionName;
@@ -58,4 +61,4 @@ class Printer
 };
 
 
-}  // namespace pyspot
+}  // namespace pywrap

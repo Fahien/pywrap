@@ -1,7 +1,7 @@
 #include "pywrap/Printer.h"
 
 
-namespace pyspot
+namespace pywrap
 {
 #define OPEN_FILE_STREAM( file, name )                                                  \
 	std::error_code      error;                                                         \
@@ -13,47 +13,52 @@ namespace pyspot
 	}
 
 
-void Printer::printBindingsHeader( StringRef name )
+void Printer::printBindingsHeader( llvm::StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
 	// Guards
-	std::string source{ "#ifndef PYSPOT_BINDINGS_H_\n#define PYSPOT_BINDINGS_H_\n\n" };
+	file << "#ifndef PYSPOT_BINDINGS_H_\n#define PYSPOT_BINDINGS_H_\n\n";
 
 	// Includes
 	for ( auto& name : m_ClassIncludes )
 	{
-		source += name + "\n";
+		file << name << "\n";
 	}
 
 	// Tail includes
-	source += "\n#include <pyspot/Wrapper.h>\n#include <structmember.h>\n\n";
+	file << "\n#include <pyspot/Wrapper.h>\n#include <structmember.h>\n\n";
 
 	// Extern C
-	source += "\n#ifdef __cplusplus\nextern \"C\" {\n#endif // __cplusplus\n\n";
+	file << "\n#ifdef __cplusplus\nextern \"C\" {\n#endif // __cplusplus\n\n";
+
+	// Print modules declaration
+	for ( auto& pr : *modules )
+	{
+		auto& module = pr.second;
+		file << module.get_decl();
+	}
 
 	for ( auto& decl : m_ClassDeclarations )
 	{
-		source += decl;
+		file << decl;
 	}
 
 	// End extern C
-	source += "\n#ifdef __cplusplus\n} // extern \"C\"\n#endif // __cplusplus\n\n";
+	file << "\n#ifdef __cplusplus\n} // extern \"C\"\n#endif // __cplusplus\n\n";
 
 	// Wrapper constructors declarations
 	for ( auto& constr : m_WrapperDeclarations )
 	{
-		source += constr;
+		file << constr;
 	}
 
 	// End guards
-	source += "\n#endif // PYSPOT_BINDINGS_H_\n";
-
-	file << source;
+	file << "\n#endif // PYSPOT_BINDINGS_H_\n";
 }
 
 
-void Printer::printBindingsSource( StringRef name )
+void Printer::printBindingsSource( llvm::StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
@@ -76,7 +81,7 @@ void Printer::printBindingsSource( StringRef name )
 }
 
 
-void Printer::printExtensionHeader( StringRef name )
+void Printer::printExtensionHeader( llvm::StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
@@ -114,7 +119,7 @@ void Printer::printExtensionHeader( StringRef name )
 }
 
 
-void Printer::printExtensionSource( StringRef name )
+void Printer::printExtensionSource( llvm::StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
@@ -184,8 +189,11 @@ void Printer::printExtensionSource( StringRef name )
 }
 
 
-void Printer::PrintOut()
+void Printer::PrintOut( const std::unordered_map<unsigned int, binding::Module>& m )
 {
+	// TODO make member variable
+	modules = &m;
+
 	llvm::sys::fs::create_directory( "include" );
 	llvm::sys::fs::create_directory( "src" );
 	llvm::sys::fs::create_directory( "include/pyspot" );
@@ -197,4 +205,4 @@ void Printer::PrintOut()
 }
 
 
-}  // namespace pyspot
+} // namespace pywrap

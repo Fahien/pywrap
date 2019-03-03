@@ -1,11 +1,11 @@
 #include "pywrap/Consumer.h"
 
-namespace pyspot
+namespace pywrap
 {
-Consumer::Consumer( FrontendAction& frontend ) : m_Handler{ frontend }
+Consumer::Consumer( std::unordered_map<unsigned int, binding::Module>& m, FrontendAction& frontend ) : m_Handler{ m, frontend }
 {
 	// Match classes with pyspot attribute
-	auto hasPyspot = clang::ast_matchers::hasAttr( clang::attr::Pyspot );
+	auto hasPyspot = clang::ast_matchers::hasAttr( clang::attr::Annotate );
 	auto pyMatcher = clang::ast_matchers::decl( hasPyspot ).bind( "PyspotTag" );
 	m_Matcher.addMatcher( pyMatcher, &m_Handler );
 }
@@ -18,4 +18,4 @@ void Consumer::HandleTranslationUnit( clang::ASTContext& context )
 }
 
 
-}  // namespace pyspot
+}  // namespace pywrap

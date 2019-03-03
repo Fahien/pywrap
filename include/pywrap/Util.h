@@ -5,12 +5,12 @@
 #include <unordered_map>
 
 #include <clang/AST/ASTContext.h>
-#include "clang/AST/Decl.h"
-#include "clang/AST/QualTypeNames.h"
-#include "clang/AST/Type.h"
+#include <clang/AST/Decl.h>
+#include <clang/AST/QualTypeNames.h>
+#include <clang/AST/Type.h>
 
 
-namespace pyspot
+namespace pywrap
 {
 // TODO improve it using proper Types
 using TemplateMap = std::unordered_map<std::string, clang::TemplateArgument*>;
@@ -29,7 +29,7 @@ inline ConstIterator<Container> find( const Container& container, const Type& va
 }
 
 
-inline void replace_all( std::string& str, const StringRef& from, const StringRef& to )
+inline void replace_all( std::string& str, const llvm::StringRef& from, const llvm::StringRef& to )
 {
 	size_t start_pos = 0;
 	while ( ( start_pos = str.find( from, start_pos ) ) != std::string::npos )
@@ -41,11 +41,22 @@ inline void replace_all( std::string& str, const StringRef& from, const StringRe
 }
 
 
-inline std::string replace_all( const std::string& str, const StringRef& from, const StringRef& to )
+inline std::string replace_all( const std::string& str, const llvm::StringRef& from, const llvm::StringRef& to )
 {
 	std::string retstr{ str };
 	replace_all( retstr, from, to );
 	return retstr;
+}
+
+
+/// @param[in] name A c++ qualified name
+/// @return A new string replacing every invalid character with a _ and putting a py_ at the beginning
+static std::string to_pyspot_name( std::string name )
+{
+	auto invalid = []( const char c ) { return c == ':' || c == ',' || c == '<' || c == '>'; };
+	std::replace_if( std::begin( name ), std::end( name ), invalid, '_' );
+	name.insert( 0, "py_" );
+	return name;
 }
 
 
@@ -130,6 +141,44 @@ inline clang::QualType to_type( const clang::QualType& type, const TemplateMap& 
 	return tempType;
 }
 
+static std::string to_python( const clang::QualType& type, const std::string& name )
+{
+	if ( type->isBooleanType() )
+	{
+		return "PyBool_FromLong( static_cast<long>( " + name + ") )";
+	}
+	if ( type->isIntegerType() )
+	{
+		return "PyLong_FromLong( static_cast<long>( " + name + " ) )";
+	}
+	if ( type->isFloatingType() )
+	{
+		std::string ret = "PyFloat_FromDouble( static_cast<double>( ";
+		if ( type->isPointerType() )
+		{
+			ret += "*";
+		}
+		ret += name + " ) )";
+		return ret;
+	}
+	if ( type->isPointerType() && type->getPointeeType()->isCharType() )
+	{
+		return "PyUnicode_FromString( " + name + " )";
+	}
+	if ( type.getAsString().find( "std::string" ) != std::string::npos )
+	{
+		return "PyUnicode_FromString( " + name + ".c_str() )";
+	} else
+	{
+		auto ret = "pyspot::Wrapper<" + type.getAsString() + ">{ ";
+		if ( type->isReferenceType() )
+		{
+			ret += "&";
+		}
+		ret += name + " }.GetIncref()";
+		return ret;
+	}
+}
 
 inline std::string to_python( const clang::QualType& type, const std::string& name, const TemplateMap& tMap,
                               const clang::ASTContext& ctx )
@@ -163,7 +212,7 @@ inline std::string to_python( const clang::QualType& type, const std::string& na
 		return "PyUnicode_FromString( " + name + ".c_str() )";
 	} else
 	{
-		auto ret = "pyspot::Wrapper<" + pyspot::to_string( type, tMap, ctx ) + ">{ ";
+		auto ret = "pyspot::Wrapper<" + pywrap::to_string( type, tMap, ctx ) + ">{ ";
 		if ( type->isReferenceType() )
 		{
 			ret += "&";
@@ -237,6 +286,6 @@ inline std::string to_parser( const clang::QualType& type )
 }
 
 
-}  // namespace pyspot
+}  // namespace pywrap
 
 #endif  // PYSPOT_UTIL_H_

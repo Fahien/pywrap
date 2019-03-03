@@ -7,26 +7,31 @@
 #include "pywrap/FrontendAction.h"
 #include "pywrap/Util.h"
 
-namespace pyspot
+#include "pywrap/binding/Module.h"
+
+namespace pywrap
 {
 class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 {
   public:
 	/// @brief Constructs the handler for a Pyspot class match
-	/// @param[in] includes Vector to put headers to include
-	/// @param[in] classes Vector to put bindings of our classes
-	MatchHandler( FrontendAction& );
+	/// @param[in] modules Map to populate with modules
+	MatchHandler( std::unordered_map<unsigned int, binding::Module>& m, FrontendAction& );
 
 	/// @return The cwd using forward slashes
 	static std::string getCwd();
 
-	/// @param[in] name Qualified class name
-	/// @return A class name for Pyspot
-	static std::string toPyspotName( std::string );
-
 	/// @brief Handles a match
 	/// @param[in] result Match result for pyspot attribute
 	virtual void run( const clang::ast_matchers::MatchFinder::MatchResult& );
+
+	/// @brief Generates python bindings for a @ref clang::Decl
+	/// @param decl A Decl which can be a variable, a function, a struct, ...
+	void generate_bindings( const clang::Decl* decl );
+
+	/// @brief Generate python bindings for a @ref clang::FunctionDecl
+	/// @param function A FunctionDecl to wrap
+	void generate_function_bindings( const clang::FunctionDecl* function );
 
 	/// @brief Handles a tag
 	/// @param[in] pTag Pointer to a tag decl
@@ -34,6 +39,8 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 	void handleTag( const clang::TagDecl*, TemplateMap&& tMap = TemplateMap{} );
 
   private:
+	std::unordered_map<unsigned int, binding::Module>& modules;
+
 	/// @param[in] manager Context SourceManager
 	/// @param[in] pDecl Pointer to the decl we want to get the path
 	/// @return A proper include path
@@ -245,4 +252,4 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 };
 
 
-}  // namespace pyspot
+}  // namespace pywrap
