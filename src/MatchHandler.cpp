@@ -860,7 +860,7 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 			if ( it == modules.end() )
 			{
 				// Create it the first time
-				auto pr = modules.emplace( idns, binding::Module( namespace_decl ) );
+				auto pr = modules.emplace( idns, binding::Module{ namespace_decl } );
 				if ( pr.second )  // success
 				{
 					it = pr.first;
@@ -869,7 +869,7 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 			auto& module = it->second;
 
 			// Add the function to the module
-			auto function = binding::Function( func_decl );
+			binding::Function function{ func_decl };
 			module.add( std::move( function ) );
 		}
 	}

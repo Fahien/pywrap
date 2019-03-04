@@ -16,7 +16,6 @@ Function::Function( const clang::FunctionDecl* f ) : func{ f }
 	gen_sign();
 	gen_decl();
 	gen_def();
-	llvm::outs() << decl.str() << def.str();
 }
 
 void Function::gen_name() { name << func->getName().str(); }

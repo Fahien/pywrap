@@ -7,15 +7,18 @@
 
 #include "pywrap/binding/Binding.h"
 
-namespace pywrap {
-namespace binding {
-
+namespace pywrap
+{
+namespace binding
+{
 class Function : public Binding
 {
   public:
 	/// Generated definition and declaration of Python bindings for a function
 	/// @param[in] func Function to wrap
 	Function( const clang::FunctionDecl* func );
+
+	Function( Function&& ) = default;
 
 	/// @return The clang FunctionDecl
 	const clang::FunctionDecl* get_decl() const { return func; }
@@ -41,7 +44,7 @@ class Function : public Binding
 	const clang::FunctionDecl* func;
 };
 
-} // namespace binding
-} // namespace pywrap
+}  // namespace binding
+}  // namespace pywrap
 
-#endif // PYWRAP_BINDING_FUNCTION_H_
+#endif  // PYWRAP_BINDING_FUNCTION_H_

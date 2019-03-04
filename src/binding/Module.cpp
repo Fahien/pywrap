@@ -4,7 +4,11 @@ namespace pywrap
 {
 namespace binding
 {
-Module::Methods::Methods( const Module& m ) : module{ m }, closed{ false } { gen_def(); }
+Module::Methods::Methods( const Module& m ) : module{ m }
+{
+	gen_py_name();
+	gen_def();
+}
 
 void Module::Methods::gen_py_name() { py_name << "py_" << module.ns->getName().str() << "_methods"; }
 
@@ -21,17 +25,12 @@ const char* gen_meth( const Function& function )
 	}
 }
 
+std::string Module::Methods::get_def() const { return def.str() + "\t{ NULL, NULL, 0, NULL } // sentinel\n};\n"; }
+
 void Module::Methods::add( const Function& function )
 {
-	assert( !closed && "Methods have been closed" );
 	def << "\t{ \"" << function.get_name() << "\", " << function.get_py_name() << ", " << gen_meth( function ) << ", \""
 	    << function.get_name() << "\" },\n";
-}
-
-void Module::Methods::close()
-{
-	closed = true;
-	def << "\t{ NULL, NULL, 0, NULL } // sentinel\n};\n";
 }
 
 Module::Module( const clang::NamespaceDecl* n ) : ns{ n }, methods{ *this }
@@ -49,14 +48,15 @@ void Module::gen_py_name() { py_name << "init_" << get_name(); }
 
 void Module::gen_sign() { sign << "PyMODINIT_FUNC " << get_py_name() << "()"; }
 
-void Module::gen_decl() { decl << sign.str() << ";"; }
+void Module::gen_decl() { decl << sign.str() << ";\n"; }
 
-void Module::gen_def()
+void Module::gen_def() { def << sign.str() << "\n{\n\tPy_InitModule( name, " << methods.get_py_name() << " );\n}\n"; }
+
+void Module::add( Function&& f )
 {
-	def << sign.str() << "\n{\n\tPy_InitModule( name, " << methods.get_py_name() << " );\n}\n";
+	methods.add( f );
+	functions.emplace_back( std::move( f ) );
 }
-
-void Module::add( Function&& function ) { methods.add( function ); }
 
 }  // namespace binding
 }  // namespace pywrap
