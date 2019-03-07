@@ -20,6 +20,9 @@ class Binding
 
 	Binding( Binding&& ) = default;
 
+	/// @return The relative path to the header
+	const std::string& get_incl() const { return incl; }
+
 	/// @return The original name
 	std::string get_name() const { return name.str(); }
 
@@ -31,6 +34,9 @@ class Binding
 
 	/// @return The definition of the binding
 	virtual std::string get_def() const { return def.str(); }
+
+	/// Generates the relative path to the header
+	void set_incl( const std::string& i ) { incl = i; }
 
   protected:
 	/// Generates the name of the binding
@@ -47,6 +53,9 @@ class Binding
 
 	/// Generates the definition of the bindings
 	virtual void gen_def(){};
+
+	/// Relative path
+	std::string incl;
 
 	/// Name
 	std::stringstream name;

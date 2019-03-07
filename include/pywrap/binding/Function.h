@@ -21,7 +21,7 @@ class Function : public Binding
 	Function( Function&& ) = default;
 
 	/// @return The clang FunctionDecl
-	const clang::FunctionDecl* get_decl() const { return func; }
+	const clang::FunctionDecl* get_func() const { return func; }
 
   protected:
 	/// @return The name of the binding

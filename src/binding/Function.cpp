@@ -25,26 +25,25 @@ void Function::gen_py_name() { py_name << to_pyspot_name( func->getQualifiedName
 void Function::gen_sign()
 {
 	// Return type is known
-	decl << "PyObject* ";
+	sign << "PyObject* ";
 
 	// Python name of the function with namespace
-	decl << get_py_name();
+	sign << get_py_name();
 
 	// First parameters is always self always these
-	decl << "( PyObject* self, ";
+	sign << "( PyObject* self, ";
 
 	// If the function has no arguments, just add void* closure
 	if ( func->getNumParams() == 0 )
 	{
-		decl << "void* /* closure */ )";
+		sign << "void* /* closure */ )";
 	}
 	// otherwise args and kwds
 	else
 	{
-		decl << "PyObject* args, PyObject* kwds )";
+		sign << "PyObject* args, PyObject* kwds )";
 	}
 }
-
 
 void Function::gen_decl()
 {

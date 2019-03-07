@@ -19,7 +19,7 @@ std::string MatchHandler::getCwd()
 	return pywrap::replace_all( aCwd.str().str(), "\\", "/" );
 }
 
-std::string MatchHandler::getIncludePath( const clang::Decl* const pDecl )
+std::string MatchHandler::get_include_path( const clang::Decl* const pDecl )
 {
 	auto location = pDecl->getLocation().printToString( m_pContext->getSourceManager() );
 	pywrap::replace_all( location, "\\", "/" );
@@ -835,7 +835,7 @@ void MatchHandler::handleTag( const clang::TagDecl* pTag, TemplateMap&& tMap )
 	}
 
 	// Get include directive
-	auto fileName = getIncludePath( pTag );
+	auto fileName = get_include_path( pTag );
 	m_Frontend.AddClassInclude( "#include \"" + fileName + "\"\n" );
 
 	// Flush everything
@@ -845,6 +845,8 @@ void MatchHandler::handleTag( const clang::TagDecl* pTag, TemplateMap&& tMap )
 
 void MatchHandler::generate_bindings( const clang::Decl* decl )
 {
+	auto incl = get_include_path( decl );
+
 	// Switch according to the decl
 	if ( auto func_decl = clang::dyn_cast<clang::FunctionDecl>( decl ) )
 	{
@@ -870,6 +872,7 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 
 			// Add the function to the module
 			binding::Function function{ func_decl };
+			function.set_incl( std::move( incl ) );
 			module.add( std::move( function ) );
 		}
 	}

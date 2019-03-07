@@ -41,10 +41,9 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
   private:
 	std::unordered_map<unsigned int, binding::Module>& modules;
 
-	/// @param[in] manager Context SourceManager
-	/// @param[in] pDecl Pointer to the decl we want to get the path
+	/// @param[in] decl Decl we want to get the path
 	/// @return A proper include path
-	std::string getIncludePath( const clang::Decl* const pDecl );
+	std::string get_include_path( const clang::Decl* const decl );
 
 	struct PyDecl
 	{

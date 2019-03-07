@@ -21,9 +21,19 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 	file << "#ifndef PYSPOT_BINDINGS_H_\n#define PYSPOT_BINDINGS_H_\n\n";
 
 	// Includes
-	for ( auto& name : m_ClassIncludes )
+	for ( auto& pr : *modules )
 	{
-		file << name << "\n";
+		auto& module = pr.second;
+		for ( auto& function : module.get_functions() )
+		{
+			auto incl = function.get_incl();
+			auto it   = m_ClassIncludes.find( incl );
+			if ( it == m_ClassIncludes.end() )
+			{
+				file << "#include \"" << incl << "\"\n";
+				m_ClassIncludes.emplace( incl );
+			}
+		}
 	}
 
 	// Tail includes
@@ -31,6 +41,16 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 
 	// Extern C
 	file << "\n#ifdef __cplusplus\nextern \"C\" {\n#endif // __cplusplus\n\n";
+
+	// Functions
+	for ( auto& pr : *modules )
+	{
+		auto& module = pr.second;
+		for ( auto& function : module.get_functions() )
+		{
+			file << function.get_decl() << '\n';
+		}
+	}
 
 	for ( auto& decl : m_ClassDeclarations )
 	{
@@ -56,21 +76,29 @@ void Printer::printBindingsSource( llvm::StringRef name )
 	OPEN_FILE_STREAM( file, name );
 
 	auto include = name.slice( 4, name.size() - 3 );
-	auto source  = "#include \"" + include.str() + "h\"\n\n#include <Python.h>\n#include <pyspot/String.h>\n";
+	file << "#include \"" << include.str() << "h\"\n\n#include <Python.h>\n#include <pyspot/String.h>\n\n\n";
+
+	// Functions
+	for ( auto& pr : *modules )
+	{
+		auto& module = pr.second;
+		for ( auto& function : module.get_functions() )
+		{
+			file << function.get_def() << '\n';
+		}
+	}
 
 	// Class binding definitions
 	for ( auto& def : m_ClassDefinitions )
 	{
-		source += def;
+		file << def;
 	}
 
 	// Wrapper constructors definitions
 	for ( auto& constr : m_WrapperDefinitions )
 	{
-		source += constr;
+		file << constr;
 	}
-
-	file << source;
 }
 
 
@@ -84,17 +112,7 @@ void Printer::printExtensionHeader( llvm::StringRef name )
 	        "#include <Python.h>\n\n";
 
 	// Extern C
-	file << "\n#ifdef __cplusplus\nextern \"C\" {\n#endif // __cplusplus\n\n"
-
-	        "extern PyObject* g_pPyspotError;\n"
-	        "extern char g_aPyspotErrorName[13];\n"
-	        "extern char g_aErrorName[6];\n\n"
-	        "struct ModuleState\n{\n\tPyObject* error;\n};\n\n"
-	        "extern char g_aPyspotDescription[7];\n\n"
-#if PY_MAJOR_VERSION >= 3
-	        "extern PyModuleDef g_sModuleDef;\n\n"
-#endif
-	    ;
+	file << "\n#ifdef __cplusplus\nextern \"C\" {\n#endif // __cplusplus\n\n";
 
 	// Print modules declaration
 	for ( auto& pr : *modules )
@@ -106,7 +124,6 @@ void Printer::printExtensionHeader( llvm::StringRef name )
 	// End extern C
 	file << "\n#ifdef __cplusplus\n} // extern \"C\"\n#endif // __cplusplus\n\n";
 
-
 	// End guards
 	file << "#endif // PYSPOT_EXTENSION_H_\n";
 }
@@ -116,27 +133,8 @@ void Printer::printExtensionSource( llvm::StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
-	file << "#include \"" << name.slice( 4, name.size() - 3 ).str()
-	     << "h\"\n\n"
-	        "#include \"pyspot/Bindings.h\"\n\n"
-	        "PyObject* g_pPyspotError = nullptr;\n"
-	        "char g_aPyspotErrorName[] { \"pyspot.error\" };\n"
-	        "char g_aErrorName[] { \"error\" };\n"
-	        "char g_aPyspotDescription[] { \"Pyspot\" };\n\n"
-#if PY_MAJOR_VERSION >= 3
-	        "PyModuleDef g_sModuleDef {\n"
-	        "\tPyModuleDef_HEAD_INIT,\n"
-	        "\tg_aPyspotDescription,\n"
-	        "\tnullptr,\n"
-	        "\tsizeof( ModuleState ),\n"
-	        "\tnullptr,\n"
-	        "\tnullptr,\n"
-	        "\tnullptr,\n"
-	        "\tnullptr,\n"
-	        "\tnullptr,\n"
-	        "};\n\n"
-#endif
-	    ;
+	file << "#include \"" << name.slice( 4, name.size() - 3 ).str() << "h\"\n\n"
+	     << "#include \"pyspot/Bindings.h\"\n\n";
 
 	for ( auto& pr : *modules )
 	{
@@ -144,26 +142,6 @@ void Printer::printExtensionSource( llvm::StringRef name )
 		file << module.get_methods().get_def();
 		file << module.get_def();
 	}
-
-	file <<
-	    // Extension function
-	    "PyMODINIT_FUNC PyInit_" << m_ExtensionName
-	     << "()\n{\n"
-	        "\t// Create the module\n"
-	        "\tPyObject* pModule { "
-#if PY_VERSION >= 3
-	        "PyModule_Create( &g_sModuleDef )"
-#else
-	        "Py_InitModule( \""
-	     << m_ExtensionName
-	     << "\", nullptr )"
-#endif
-	        "};\n"
-	        "\tif ( pModule == nullptr )\n\t{\n\t\treturn;\n\t}\n\n"
-	        "\t// Module exception\n"
-	        "\tg_pPyspotError = PyErr_NewException( g_aPyspotErrorName, nullptr, nullptr );\n"
-	        "\tPy_INCREF( g_pPyspotError );\n"
-	        "\tPyModule_AddObject( pModule, g_aErrorName, g_pPyspotError );\n\n";
 
 	// Add objects to module
 	for ( auto& reg : m_ClassRegistrations )
@@ -176,13 +154,6 @@ void Printer::printExtensionSource( llvm::StringRef name )
 	{
 		file << item;
 	}
-
-	// Return the module
-	file <<
-#if PY_MAJOR_VERSION >= 3
-	    "\treturn pModule;\n"
-#endif
-	    "}\n";
 }
 
 
