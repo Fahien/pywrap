@@ -55,18 +55,14 @@ void Module::gen_def()
 	std::stringstream exception;
 	exception << "exception";
 
-	std::stringstream exception_name;
-	exception_name << exception.str() << "_name";
-
 	std::stringstream module_exception_name;
 	module_exception_name << get_name() << "_" << exception.str();
 
-	def << sign.str() << "\n{\n\tauto module = Py_InitModule( name, " << methods.get_py_name() << " );\n\n"
+	def << sign.str() << "\n{\n\tauto module = Py_InitModule( \"" << get_name() << "\", " << methods.get_py_name() << " );\n\n"
 	    << "\tstatic char " << module_exception_name.str() << "[] = { \"" << get_name() << ".exception\" };\n"
-	    << "\tstatic char " << exception_name.str() << "[] = { \"" << exception.str() << "\" };\n"
 	    << "\tauto " << exception.str() << " = PyErr_NewException( " << module_exception_name.str() << ", NULL, NULL );\n"
 	    << "\tPy_INCREF( " << exception.str() << " );\n"
-	    << "\tPyModule_AddObject( module, " << exception_name.str() << ", " << exception.str() << " );\n"
+	    << "\tPyModule_AddObject( module, \"" << exception.str() << "\", " << exception.str() << " );\n"
 	    << "}\n";
 }
 

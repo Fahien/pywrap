@@ -30,19 +30,8 @@ void Function::gen_sign()
 	// Python name of the function with namespace
 	sign << get_py_name();
 
-	// First parameters is always self always these
-	sign << "( PyObject* self, ";
-
-	// If the function has no arguments, just add void* closure
-	if ( func->getNumParams() == 0 )
-	{
-		sign << "void* /* closure */ )";
-	}
-	// otherwise args and kwds
-	else
-	{
-		sign << "PyObject* args, PyObject* kwds )";
-	}
+	// Function parameters are always these
+	sign << "( PyObject* self, PyObject* args )";
 }
 
 void Function::gen_decl()
@@ -66,7 +55,7 @@ void Function::gen_def()
 
 	// Perform the call
 	std::stringstream call;
-	call << func->getName().str() << "(";
+	call << func->getQualifiedNameAsString() << "(";
 
 	// Check if there are parameters
 	auto param_count = func->parameters().size();
