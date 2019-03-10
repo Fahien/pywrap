@@ -44,14 +44,11 @@ void TypeObject::gen_def()
 	       "\t0, // setattro\n\n"
 	       "\t0, // as_buffer\n\n"
 	       "\tPy_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, // flags\n\n"
-	    << "\t\"" << tag.get_py_name()
-	    << "\", // doc\n\n"
-	       "\t0, // traverse\n\n"
+	    << "\t\"" << tag.get_qualified_name() << "\", // doc\n\n"
+	    << "\t0, // traverse\n\n"
 	       "\t0, // clear\n\n"
-	    << "\treinterpret_cast<richcmpfunc>( "
-	    //<< tag.compare.name
-	    << " ), // richcompare\n\n"
-	       "\t0, // weaklistoffset\n\n"
+	    << "\treinterpret_cast<richcmpfunc>( " << tag.get_compare().get_name() << " ), // richcompare\n\n"
+	    << "\t0, // weaklistoffset\n\n"
 	       "\t0, // iter\n"
 	       "\t0, // iternext\n\n"
 	       "\t"

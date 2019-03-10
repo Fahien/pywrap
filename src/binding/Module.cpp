@@ -52,7 +52,7 @@ void Module::gen_def()
 	    << "\tstatic char " << module_exception_name.str() << "[] = { \"" << get_name() << ".exception\" };\n"
 	    << "\tauto " << exception.str() << " = PyErr_NewException( " << module_exception_name.str() << ", NULL, NULL );\n"
 	    << "\tPy_INCREF( " << exception.str() << " );\n"
-	    << "\tPyModule_AddObject( module, \"" << exception.str() << "\", " << exception.str() << " );\n";
+	    << "\tPyModule_AddObject( module, \"" << exception.str() << "\", " << exception.str() << " );\n\n";
 	// will be closed by get_def
 }
 

@@ -2,6 +2,7 @@
 #define PYWRAP_BINDING_TAG_H_
 
 #include "pywrap/binding/Destructor.h"
+#include "pywrap/binding/Compare.h"
 #include "pywrap/binding/TypeObject.h"
 
 namespace pywrap
@@ -22,11 +23,17 @@ class Tag : public Binding
 	/// Initialized the tag
 	void init() override;
 
+	/// @return The tag decl
+	const clang::TagDecl* operator->() { return tag; }
+
 	/// @return The qualified name
 	const std::string& get_qualified_name() const { return qualified_name; }
 
 	/// @return The destructor
 	const Destructor& get_destructor() const { return destructor; }
+
+	/// @return The compare func
+	const Compare& get_compare() const { return compare; }
 
 	/// @return The type object
 	const TypeObject& get_type_object() const { return type_object; }
@@ -55,6 +62,9 @@ class Tag : public Binding
 
 	/// Destructor
 	Destructor destructor;
+
+	/// Compare
+	Compare compare;
 
 	/// Python type object
 	TypeObject type_object;
