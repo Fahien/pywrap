@@ -19,7 +19,8 @@ const char* gen_meth( const Function& function )
 	if ( function.get_func()->param_size() == 0 )
 	{
 		return "METH_NOARGS";
-	} else
+	}
+	else
 	{
 		return "METH_VARARGS | METH_KEYWORDS";
 	}

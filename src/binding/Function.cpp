@@ -25,6 +25,8 @@ void Function::gen_sign()
 
 void Function::gen_def()
 {
+	// TODO consider whether it is too complex
+
 	// Open {
 	def << sign.str() << "\n{\n";
 
@@ -82,7 +84,8 @@ void Function::gen_def()
 				def << type << " " + name + ";\n";
 				// This will be used to call the wrapped function
 				call_arg_list << name;
-			} else
+			}
+			else
 			{
 				if ( qualType->isPointerType() )
 				{
@@ -93,7 +96,8 @@ void Function::gen_def()
 						def << "PyObject* " << name << ";\n";
 						call_arg_list << pywrap::to_c( type, name );
 					}
-				} else
+				}
+				else
 				{
 					// Wrapper
 					def << "_PyspotWrapper* " << name << ";\n";
@@ -122,7 +126,8 @@ void Function::gen_def()
 		def << "\t" << call.rdbuf()
 		    << ";\n"
 		       "\tPy_INCREF( Py_None );\n\treturn Py_None;\n}\n\n";
-	} else
+	}
+	else
 	{
 		def << "\treturn " << pywrap::to_python( func->getReturnType(), call.str() ) << ";\n";
 	}

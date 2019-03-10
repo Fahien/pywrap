@@ -24,10 +24,10 @@ class Function : public Binding
 	const clang::FunctionDecl* get_func() const { return func; }
 
   protected:
-	/// @return A signature of the binding
+	/// Generates the signature of the binding
 	void gen_sign() override;
 
-	/// @return A definition of the bindings
+	/// Generates the definition of the bindings
 	void gen_def() override;
 
   private:

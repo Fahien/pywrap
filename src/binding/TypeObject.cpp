@@ -51,10 +51,8 @@ void TypeObject::gen_def()
 	    << "\t0, // weaklistoffset\n\n"
 	       "\t0, // iter\n"
 	       "\t0, // iternext\n\n"
-	       "\t"
-	    //<< tag.methods.name
-	    << ", // methods\n"
-	       "\t"
+	    << "\t" << tag.get_methods().get_py_name() << ", // methods\n"
+	    << "\t"
 	    //<< tag.members.name
 	    << ", // members\n"
 	       "\t"
