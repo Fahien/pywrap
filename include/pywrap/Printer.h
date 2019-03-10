@@ -13,7 +13,9 @@ class Printer
   public:
 	Printer( const std::string& name = "extension" ) : m_ExtensionName{ name } {}
 
-	void AddClassInclude( const std::string& include ) { m_ClassIncludes.emplace( include ); }
+	/// Adds an include path to the set of processed ones
+	/// @param[in] include Include path
+	void add_include( const std::string& include ) { processed_includes.emplace( include ); }
 	void AddClassDeclaration( const std::string& str ) { m_ClassDeclarations.emplace_back( str ); }
 	void AddClassDefinition( const std::string& str ) { m_ClassDefinitions.emplace_back( str ); }
 	void AddClassRegistration( const std::string& str ) { m_ClassRegistrations.emplace_back( str ); }
@@ -51,7 +53,7 @@ class Printer
 	/// List of already handled class names
 	std::vector<std::string> m_Handled;
 
-	std::set<std::string>    m_ClassIncludes;
+	std::set<std::string>    processed_includes;
 	std::vector<std::string> m_ClassDeclarations;
 	std::vector<std::string> m_ClassDefinitions;
 	std::vector<std::string> m_ClassRegistrations;

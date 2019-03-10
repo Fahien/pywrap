@@ -23,17 +23,23 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 	// Includes
 	for ( auto& pr : *modules )
 	{
-		auto& module = pr.second;
-		for ( auto& function : module.get_functions() )
-		{
-			auto incl = function.get_incl();
-			auto it   = m_ClassIncludes.find( incl );
-			if ( it == m_ClassIncludes.end() )
+		auto process_include = [&]( const binding::Binding& b ) {
+			auto incl = b.get_incl();
+			auto it   = processed_includes.find( incl );
+			if ( it == processed_includes.end() )
 			{
 				file << "#include \"" << incl << "\"\n";
-				m_ClassIncludes.emplace( incl );
+				processed_includes.emplace( incl );
 			}
-		}
+		};
+
+		auto& module = pr.second;
+
+		auto& functions = module.get_functions();
+		auto& enums     = module.get_enums();
+
+		std::for_each( functions.begin(), functions.end(), process_include );
+		std::for_each( enums.begin(), enums.end(), process_include );
 	}
 
 	// Tail includes
@@ -42,14 +48,19 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 	// Extern C
 	file << "\n#ifdef __cplusplus\nextern \"C\" {\n#endif // __cplusplus\n\n";
 
-	// Functions
 	for ( auto& pr : *modules )
 	{
+		auto print_decl = [&]( const binding::Binding& b ) { file << b.get_decl() << '\n'; };
+
 		auto& module = pr.second;
-		for ( auto& function : module.get_functions() )
-		{
-			file << function.get_decl() << '\n';
-		}
+
+		// Functions
+		auto& functions = module.get_functions();
+		std::for_each( functions.begin(), functions.end(), print_decl );
+
+		// Enums
+		auto& enums = module.get_enums();
+		std::for_each( enums.begin(), enums.end(), print_decl );
 	}
 
 	for ( auto& decl : m_ClassDeclarations )
@@ -78,14 +89,19 @@ void Printer::printBindingsSource( llvm::StringRef name )
 	auto include = name.slice( 4, name.size() - 3 );
 	file << "#include \"" << include.str() << "h\"\n\n#include <Python.h>\n#include <pyspot/String.h>\n\n\n";
 
-	// Functions
 	for ( auto& pr : *modules )
 	{
+		auto print_def = [&]( const binding::Binding& b ) { file << b.get_def() << '\n'; };
+
 		auto& module = pr.second;
-		for ( auto& function : module.get_functions() )
-		{
-			file << function.get_def() << '\n';
-		}
+
+		// Functions
+		auto& functions = module.get_functions();
+		std::for_each( functions.begin(), functions.end(), print_def );
+
+		// Enums
+		auto& enums = module.get_enums();
+		std::for_each( enums.begin(), enums.end(), print_def );
 	}
 
 	// Class binding definitions

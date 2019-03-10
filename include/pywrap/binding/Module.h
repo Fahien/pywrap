@@ -5,7 +5,7 @@
 
 #include <clang/AST/Decl.h>
 
-#include "pywrap/binding/Binding.h"
+#include "pywrap/binding/Enum.h"
 #include "pywrap/binding/Function.h"
 
 namespace pywrap
@@ -26,8 +26,10 @@ class Module : public Binding
 		Methods( Methods&& ) = default;
 
 		/// Adds a function to the methods map
-		void add( const Function& function );
+		/// @param f The function to add
+		void add( const Function& f );
 
+		/// @return The definition of the methods map
 		std::string get_def() const override;
 
 	  protected:
@@ -46,9 +48,15 @@ class Module : public Binding
 
 	Module( Module&& ) = default;
 
+	std::string get_def() const override;
+
 	/// Adds a function to this module
 	/// @param[in] f The function to add to this module
 	void add( Function&& f );
+
+	/// Adds an enum to this module
+	/// @param[in] e The enum to add to this module
+	void add( Enum&& e );
 
 	/// @return The methods map for the module init function
 	const Methods& get_methods() const { return methods; }
@@ -56,21 +64,18 @@ class Module : public Binding
 	/// @return Functions associated with the module
 	const std::vector<Function>& get_functions() const { return functions; }
 
-  protected:
-	/// @return The name of the binding
-	void gen_name() override;
+	/// @return Enums associated with the module
+	const std::vector<Enum>& get_enums() const { return enums; }
 
+  protected:
 	/// @return The Python name of the binding
-	void gen_py_name() override;
+	virtual void gen_py_name() override;
 
 	/// @return A signature of the binding
-	void gen_sign() override;
-
-	/// @return A declaration of the bindings
-	void gen_decl() override;
+	virtual void gen_sign() override;
 
 	/// @return A definition of the bindings
-	void gen_def() override;
+	virtual void gen_def() override;
 
   private:
 	/// Namespace decl
@@ -79,7 +84,11 @@ class Module : public Binding
 	/// Python MethodDef
 	Methods methods;
 
+	/// Module functions
 	std::vector<Function> functions;
+
+	/// Module enums
+	std::vector<Enum> enums;
 };
 
 }  // namespace binding

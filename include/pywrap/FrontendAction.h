@@ -25,7 +25,8 @@ class FrontendAction : public clang::ASTFrontendAction
 	const std::vector<std::string>& GetGlobalIncludes() const { return m_GlobalIncludes; }
 
 	void AddGlobalInclude( const std::string& searchPath );
-	void AddClassInclude( const std::string& include ) { m_Printer.AddClassInclude( include ); }
+	// TODO remove
+	void AddClassInclude( const std::string& include ) {}
 	void AddClassDeclaration( const std::string& str ) { m_Printer.AddClassDeclaration( str ); }
 	void AddClassDefinition( const std::string& str ) { m_Printer.AddClassDefinition( str ); }
 	void AddClassRegistration( const std::string& str ) { m_Printer.AddClassRegistration( str ); }

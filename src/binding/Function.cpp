@@ -9,18 +9,7 @@ namespace pywrap
 {
 namespace binding
 {
-Function::Function( const clang::FunctionDecl* f ) : func{ f }
-{
-	gen_name();
-	gen_py_name();
-	gen_sign();
-	gen_decl();
-	gen_def();
-}
-
-void Function::gen_name() { name << func->getName().str(); }
-
-void Function::gen_py_name() { py_name << to_pyspot_name( func->getQualifiedNameAsString() ); }
+Function::Function( const clang::FunctionDecl* f ) : Binding{ f }, func{ f } { init(); }
 
 void Function::gen_sign()
 {
@@ -32,12 +21,6 @@ void Function::gen_sign()
 
 	// Function parameters are always these
 	sign << "( PyObject* self, PyObject* args )";
-}
-
-void Function::gen_decl()
-{
-	// Append ; to the signature
-	decl << sign.str() << ";\n";
 }
 
 void Function::gen_def()

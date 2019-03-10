@@ -39,11 +39,21 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 	void handleTag( const clang::TagDecl*, TemplateMap&& tMap = TemplateMap{} );
 
   private:
+	/// Creates a module for the context if it does not already exist
+	/// @param[in] ctx Declaration context to become a module
+	binding::Module& get_module( const clang::DeclContext* ctx );
+
+	/// Map of global id of the DeclContext and the associated Module
 	std::unordered_map<unsigned int, binding::Module>& modules;
 
 	/// @param[in] decl Decl we want to get the path
 	/// @return A proper include path
 	std::string get_include_path( const clang::Decl* const decl );
+
+	/// Generates a binding instance
+	/// @param decl The decl to wrap
+	template <typename B, typename D>
+	B create_binding( const D* decl );
 
 	struct PyDecl
 	{

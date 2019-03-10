@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include "pywrap/binding/Enum.h"
 #include "pywrap/binding/Function.h"
 #include "pywrap/binding/Module.h"
 
@@ -843,40 +844,52 @@ void MatchHandler::handleTag( const clang::TagDecl* pTag, TemplateMap&& tMap )
 }
 
 
+binding::Module& MatchHandler::get_module( const clang::DeclContext* ctx )
+{
+	assert( ctx && ctx->isNamespace() && "Function should be in a namespace" );
+	auto namespace_decl = clang::dyn_cast<clang::NamespaceDecl>( ctx );
+	// Find the module
+	auto id = namespace_decl->getGlobalID();
+	auto it = modules.find( id );
+	if ( it == modules.end() )
+	{
+		// Create it the first time
+		auto pr = modules.emplace( id, binding::Module{ namespace_decl } );
+		if ( pr.second )  // success
+		{
+			it = pr.first;
+		}
+	}
+	return it->second;
+}
+
+template <typename B, typename D>
+B MatchHandler::create_binding( const D* decl )
+{
+	B binding{ decl };
+	binding.set_incl( get_include_path( decl ) );
+	return binding;
+}
+
 void MatchHandler::generate_bindings( const clang::Decl* decl )
 {
-	auto incl = get_include_path( decl );
+	// The function should be in a namespace
+	// TODO But an enum can be in a class as well
+	auto  ctx    = decl->getDeclContext();
+	auto& module = get_module( ctx );
 
 	// Switch according to the decl
 	if ( auto func_decl = clang::dyn_cast<clang::FunctionDecl>( decl ) )
 	{
-		// The function should be in a namespace
-		auto ctx = decl->getDeclContext();
-
-		assert( ctx && ctx->isNamespace() && "Function should be in a namespace" );
-		if ( auto namespace_decl = clang::dyn_cast<clang::NamespaceDecl>( ctx ) )
-		{
-			// Find the module
-			auto idns = decl->getIdentifierNamespace();
-			auto it   = modules.find( idns );
-			if ( it == modules.end() )
-			{
-				// Create it the first time
-				auto pr = modules.emplace( idns, binding::Module{ namespace_decl } );
-				if ( pr.second )  // success
-				{
-					it = pr.first;
-				}
-			}
-			auto& module = it->second;
-
-			// Add the function to the module
-			binding::Function function{ func_decl };
-			function.set_incl( std::move( incl ) );
-			module.add( std::move( function ) );
-		}
+		// Add the function to the module
+		module.add( create_binding<binding::Function>( func_decl ) );
 	}
 	// generate_enum_bindings
+	else if ( auto enum_decl = clang::dyn_cast<clang::EnumDecl>( decl ) )
+	{
+		// Add the enum to the module
+		module.add( create_binding<binding::Enum>( enum_decl ) );
+	}
 	// generate_struct_bindings
 }
 

@@ -9,16 +9,20 @@ namespace pywrap
 {
 namespace binding
 {
-/// This contains declaration and definition of the Python bindings
+/// Contains declaration and definition of the Python bindings
 /// of a C++ Decl (namespace, function, enum, class, etc.)
 class Binding
 {
   public:
 	Binding() = default;
+	Binding( const clang::NamedDecl* n );
 
 	virtual ~Binding() = default;
 
 	Binding( Binding&& ) = default;
+
+	/// Initializes the members
+	virtual void init();
 
 	/// @return The relative path to the header
 	const std::string& get_incl() const { return incl; }
@@ -29,8 +33,11 @@ class Binding
 	/// @return The python name
 	std::string get_py_name() const { return py_name.str(); }
 
+	/// @return The signature of the binding
+	std::string get_sign() const { return sign.str(); }
+
 	/// @return The declaration of the binding
-	std::string get_decl() const { return decl.str(); }
+	virtual std::string get_decl() const { return decl.str(); }
 
 	/// @return The definition of the binding
 	virtual std::string get_def() const { return def.str(); }
@@ -40,19 +47,22 @@ class Binding
 
   protected:
 	/// Generates the name of the binding
-	virtual void gen_name(){};
+	virtual void gen_name();
 
 	/// Generates the Python name of the binding
-	virtual void gen_py_name(){};
+	virtual void gen_py_name();
 
 	/// Generates the signature of the binding
 	virtual void gen_sign(){};
 
 	/// Generates the declaration of the bindings
-	virtual void gen_decl(){};
+	virtual void gen_decl();
 
 	/// Generates the definition of the bindings
 	virtual void gen_def(){};
+
+	/// Named decl
+	const clang::NamedDecl* named{ nullptr };
 
 	/// Relative path
 	std::string incl;

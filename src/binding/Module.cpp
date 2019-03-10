@@ -33,22 +33,11 @@ void Module::Methods::add( const Function& function )
 	    << function.get_name() << "\" },\n";
 }
 
-Module::Module( const clang::NamespaceDecl* n ) : ns{ n }, methods{ *this }
-{
-	gen_name();
-	gen_py_name();
-	gen_sign();
-	gen_decl();
-	gen_def();
-}
-
-void Module::gen_name() { name << ns->getName().str(); }
+Module::Module( const clang::NamespaceDecl* n ) : Binding{ n }, ns{ n }, methods{ *this } { init(); }
 
 void Module::gen_py_name() { py_name << "PyInit_" << get_name(); }
 
 void Module::gen_sign() { sign << "PyMODINIT_FUNC " << get_py_name() << "()"; }
-
-void Module::gen_decl() { decl << sign.str() << ";\n\n"; }
 
 void Module::gen_def()
 {
@@ -58,18 +47,27 @@ void Module::gen_def()
 	std::stringstream module_exception_name;
 	module_exception_name << get_name() << "_" << exception.str();
 
-	def << sign.str() << "\n{\n\tauto module = Py_InitModule( \"" << get_name() << "\", " << methods.get_py_name() << " );\n\n"
+	def << sign.str() << "\n{\n\tauto module = Py_InitModule( \"" << get_name() << "\", " << methods.get_py_name()
+	    << " );\n\n"
 	    << "\tstatic char " << module_exception_name.str() << "[] = { \"" << get_name() << ".exception\" };\n"
 	    << "\tauto " << exception.str() << " = PyErr_NewException( " << module_exception_name.str() << ", NULL, NULL );\n"
 	    << "\tPy_INCREF( " << exception.str() << " );\n"
-	    << "\tPyModule_AddObject( module, \"" << exception.str() << "\", " << exception.str() << " );\n"
-	    << "}\n";
+	    << "\tPyModule_AddObject( module, \"" << exception.str() << "\", " << exception.str() << " );\n";
+	// will be closed by get_def
 }
+
+std::string Module::get_def() const { return def.str() + "}\n"; }
 
 void Module::add( Function&& f )
 {
 	methods.add( f );
 	functions.emplace_back( std::move( f ) );
+}
+
+void Module::add( Enum&& e )
+{
+	def << e.get_reg();
+	enums.emplace_back( std::move( e ) );
 }
 
 }  // namespace binding

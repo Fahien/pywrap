@@ -24,17 +24,8 @@ class Function : public Binding
 	const clang::FunctionDecl* get_func() const { return func; }
 
   protected:
-	/// @return The name of the binding
-	void gen_name() override;
-
-	/// @return The Python name of the binding
-	void gen_py_name() override;
-
 	/// @return A signature of the binding
 	void gen_sign() override;
-
-	/// @return A declaration of the bindings
-	void gen_decl() override;
 
 	/// @return A definition of the bindings
 	void gen_def() override;
