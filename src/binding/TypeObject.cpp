@@ -52,10 +52,8 @@ void TypeObject::gen_def()
 	       "\t0, // iter\n"
 	       "\t0, // iternext\n\n"
 	    << "\t" << tag.get_methods().get_py_name() << ", // methods\n"
+	    << "\t" << tag.get_members().get_py_name() << ", // members\n"
 	    << "\t"
-	    //<< tag.members.name
-	    << ", // members\n"
-	       "\t"
 	    //<< tag.accessors.name
 	    << ", // getset\n"
 	       "\t0, // base\n"

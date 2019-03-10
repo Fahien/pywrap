@@ -30,10 +30,29 @@ class Tag : public Binding
 		std::string get_def() const override;
 
 	  protected:
-		/// @return The python name of the methods map
+		/// Generates the python name of the methods map
 		void gen_py_name() override;
 
-		/// @return Definition of the methods map
+		/// Generates Definition of the methods map
+		void gen_def() override;
+
+	  private:
+		const Tag& tag;
+	};
+
+	/// This represents a PyMemberDef structure
+	class Members : public Binding
+	{
+	  public:
+		Members( const Tag& t );
+
+		Members( Members&& ) = default;
+
+	  protected:
+		/// Generates the python name of the members map
+		void gen_py_name() override;
+
+		/// Generates the definition of the members map
 		void gen_def() override;
 
 	  private:
@@ -65,6 +84,9 @@ class Tag : public Binding
 
 	/// @return The methods map
 	const Methods& get_methods() const { return methods; }
+
+	/// @return The members map
+	const Members& get_members() const { return members; }
 
 	/// @return The type object
 	const TypeObject& get_type_object() const { return type_object; }
@@ -99,6 +121,9 @@ class Tag : public Binding
 
 	/// Methods
 	Methods methods;
+
+	/// Members
+	Members members;
 
 	/// Python type object
 	TypeObject type_object;

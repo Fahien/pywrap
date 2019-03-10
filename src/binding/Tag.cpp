@@ -35,6 +35,20 @@ void Tag::Methods::add( const Method& method )
 	    << method.get_name() << "\" },\n";
 }
 
+Tag::Members::Members( const Tag& t ) : tag{ t }
+{
+	// Will be initialized by the tag
+}
+
+void Tag::Members::gen_py_name() { py_name << tag.get_py_name() << "_members"; }
+
+void Tag::Members::gen_def()
+{
+	// Just definition
+	def << "PyMemberDef " << get_py_name() << "[] = {\n"
+	    << "\t{ NULL } // sentinel\n};\n\n";
+}
+
 Tag::Tag( const clang::TagDecl* t )
     : Binding{ t },
       tag{ t },
@@ -42,6 +56,7 @@ Tag::Tag( const clang::TagDecl* t )
       destructor{ *this },
       compare{ *this },
       methods{ *this },
+      members{ *this },
       type_object{ *this }
 {
 	// Leaves should init
@@ -53,18 +68,19 @@ void Tag::init()
 	destructor.init();
 	compare.init();
 	methods.init();
+	members.init();
 	type_object.init();
 	gen_reg();
 }
 
 std::string Tag::get_decl() const
 {
-	return destructor.get_decl() + compare.get_decl() + methods.get_decl() + type_object.get_decl();
+	return destructor.get_decl() + compare.get_decl() + methods.get_decl() + members.get_decl() + type_object.get_decl();
 }
 
 std::string Tag::get_def() const
 {
-	return destructor.get_def() + compare.get_def() + methods.get_def() + type_object.get_def();
+	return destructor.get_def() + compare.get_def() + methods.get_def() + members.get_def() + type_object.get_def();
 }
 
 }  // namespace binding
