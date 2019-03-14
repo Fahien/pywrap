@@ -10,9 +10,15 @@ Module::Methods::Methods( const Module& m ) : module{ m }
 	gen_def();
 }
 
-void Module::Methods::gen_py_name() { py_name << "py_" << module.ns->getName().str() << "_methods"; }
+void Module::Methods::gen_py_name()
+{
+	py_name << "py_" << module.ns->getName().str() << "_methods";
+}
 
-void Module::Methods::gen_def() { def << "PyMethodDef " << get_py_name() << "[] = {\n"; }
+void Module::Methods::gen_def()
+{
+	def << "PyMethodDef " << get_py_name() << "[] = {\n";
+}
 
 const char* gen_meth( const Function& function )
 {
@@ -26,7 +32,10 @@ const char* gen_meth( const Function& function )
 	}
 }
 
-std::string Module::Methods::get_def() const { return def.str() + "\t{ NULL, NULL, 0, NULL } // sentinel\n};\n\n"; }
+std::string Module::Methods::get_def() const
+{
+	return def.str() + "\t{ NULL, NULL, 0, NULL } // sentinel\n};\n\n";
+}
 
 void Module::Methods::add( const Function& function )
 {
@@ -34,11 +43,20 @@ void Module::Methods::add( const Function& function )
 	    << function.get_name() << "\" },\n";
 }
 
-Module::Module( const clang::NamespaceDecl* n ) : Binding{ n }, ns{ n }, methods{ *this } { init(); }
+Module::Module( const clang::NamespaceDecl* n ) : Binding{ n }, ns{ n }, methods{ *this }
+{
+	init();
+}
 
-void Module::gen_py_name() { py_name << "PyInit_" << get_name(); }
+void Module::gen_py_name()
+{
+	py_name << "PyInit_" << get_name();
+}
 
-void Module::gen_sign() { sign << "PyMODINIT_FUNC " << get_py_name() << "()"; }
+void Module::gen_sign()
+{
+	sign << "PyMODINIT_FUNC " << get_py_name() << "()";
+}
 
 void Module::gen_def()
 {
@@ -57,7 +75,10 @@ void Module::gen_def()
 	// will be closed by get_def
 }
 
-std::string Module::get_def() const { return def.str() + "}\n"; }
+std::string Module::get_def() const
+{
+	return def.str() + "}\n";
+}
 
 void Module::add( Function&& f )
 {

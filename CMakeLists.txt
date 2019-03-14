@@ -3,6 +3,7 @@ set( LLVM_LINK_COMPONENTS Support )
 add_clang_library( pywrap-lib
 	src/binding/Binding.cpp
 	src/binding/Destructor.cpp
+	src/binding/Init.cpp
 	src/binding/Compare.cpp
 	src/binding/Method.cpp
 	src/binding/TypeObject.cpp

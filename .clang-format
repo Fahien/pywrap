@@ -15,3 +15,7 @@ UseTab: ForIndentation
 Cpp11BracedListStyle: false
 MaxEmptyLinesToKeep: 2
 ColumnLimit: 125
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerAllOnOneLineOrOnePerLine: true

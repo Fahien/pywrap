@@ -7,7 +7,9 @@ namespace pywrap
 {
 namespace binding
 {
-Binding::Binding( const clang::NamedDecl* n ) : named{ n } {}
+Binding::Binding( const clang::NamedDecl* n ) : named{ n }
+{
+}
 
 void Binding::init()
 {
@@ -34,7 +36,10 @@ void Binding::gen_py_name()
 	}
 }
 
-void Binding::gen_decl() { decl << sign.str() << ";\n\n"; }
+void Binding::gen_decl()
+{
+	decl << sign.str() << ";\n\n";
+}
 
 }  // namespace binding
 }  // namespace pywrap

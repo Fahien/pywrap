@@ -3,6 +3,7 @@
 
 #include "pywrap/binding/Compare.h"
 #include "pywrap/binding/Destructor.h"
+#include "pywrap/binding/Init.h"
 #include "pywrap/binding/Method.h"
 #include "pywrap/binding/TypeObject.h"
 
@@ -59,6 +60,25 @@ class Tag : public Binding
 		const Tag& tag;
 	};
 
+	/// Represents a getset map
+	class Accessors : public Binding
+	{
+	  public:
+		Accessors( const Tag& t );
+
+		Accessors( Accessors&& ) = default;
+
+	  protected:
+		/// Generates the python name of the getset map
+		void gen_py_name() override;
+
+		/// Generates the definition of the getset map
+		void gen_def() override;
+
+	  private:
+		const Tag& tag;
+	};
+
 	/// Generates bindings for a Tag (struct/union/class/enum)
 	/// @param[in] Tag to wrap
 	Tag( const clang::TagDecl* t );
@@ -79,6 +99,9 @@ class Tag : public Binding
 	/// @return The destructor
 	const Destructor& get_destructor() const { return destructor; }
 
+	/// @return The initializer
+	const Init& get_init() const { return initializer; }
+
 	/// @return The compare func
 	const Compare& get_compare() const { return compare; }
 
@@ -87,6 +110,9 @@ class Tag : public Binding
 
 	/// @return The members map
 	const Members& get_members() const { return members; }
+
+	/// @return The getset map
+	const Accessors& get_accessors() const { return accessors; }
 
 	/// @return The type object
 	const TypeObject& get_type_object() const { return type_object; }
@@ -115,6 +141,9 @@ class Tag : public Binding
 
 	/// Destructor
 	Destructor destructor;
+	
+	/// Init
+	Init initializer;
 
 	/// Compare
 	Compare compare;
@@ -124,6 +153,9 @@ class Tag : public Binding
 
 	/// Members
 	Members members;
+
+	/// Accessors
+	Accessors accessors;
 
 	/// Python type object
 	TypeObject type_object;

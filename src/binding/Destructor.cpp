@@ -11,9 +11,15 @@ Destructor::Destructor( const Tag& t ) : tag{ t }
 	// Initialized by the tag
 }
 
-void Destructor::gen_name() { name << tag.get_py_name() << "_dealloc"; }
+void Destructor::gen_name()
+{
+	name << tag.get_py_name() << "_dealloc";
+}
 
-void Destructor::gen_sign() { sign << "void " << name.str() << "( _PyspotWrapper* self )"; }
+void Destructor::gen_sign()
+{
+	sign << "void " << name.str() << "( _PyspotWrapper* self )";
+}
 
 void Destructor::gen_def()
 {

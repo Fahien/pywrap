@@ -12,13 +12,25 @@ TypeObject::TypeObject( const Tag& t ) : tag{ t }
 	// TypeObject should be initialized by its Tag
 }
 
-void TypeObject::gen_name() { name << tag.get_py_name() << "_type_object"; }
+void TypeObject::gen_name()
+{
+	name << tag.get_py_name() << "_type_object";
+}
 
-void TypeObject::gen_py_name() { py_name << get_name(); }
+void TypeObject::gen_py_name()
+{
+	py_name << get_name();
+}
 
-void TypeObject::gen_sign() { sign << "PyTypeObject " << get_py_name(); }
+void TypeObject::gen_sign()
+{
+	sign << "PyTypeObject " << get_py_name();
+}
 
-void TypeObject::gen_decl() { decl << "extern " << get_sign() << ";\n"; }
+void TypeObject::gen_decl()
+{
+	decl << "extern " << get_sign() << ";\n";
+}
 
 void TypeObject::gen_def()
 {
@@ -53,18 +65,14 @@ void TypeObject::gen_def()
 	       "\t0, // iternext\n\n"
 	    << "\t" << tag.get_methods().get_py_name() << ", // methods\n"
 	    << "\t" << tag.get_members().get_py_name() << ", // members\n"
-	    << "\t"
-	    //<< tag.accessors.name
-	    << ", // getset\n"
-	       "\t0, // base\n"
+	    << "\t" << tag.get_accessors().get_py_name() << ", // getset\n"
+	    << "\t0, // base\n"
 	       "\t0, // dict\n"
 	       "\t0, // descr_get\n"
 	       "\t0, // descr_set\n"
 	       "\t0, // dictoffset\n"
-	       "\treinterpret_cast<initproc>( "
-	    //<< tag.init.name
-	    << " ), // init\n"
-	       "\t0, // alloc\n"
+	    << "\treinterpret_cast<initproc>( " << tag.get_init().get_name() << " ), // init\n"
+	    << "\t0, // alloc\n"
 	       "\tPyspotWrapper_New, // new\n};\n\n";
 }
 }  // namespace binding

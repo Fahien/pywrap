@@ -9,7 +9,10 @@ namespace pywrap
 {
 namespace binding
 {
-Function::Function( const clang::FunctionDecl* f ) : Binding{ f }, func{ f } { init(); }
+Function::Function( const clang::FunctionDecl* f ) : Binding{ f }, func{ f }
+{
+	init();
+}
 
 void Function::gen_sign()
 {
