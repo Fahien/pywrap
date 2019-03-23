@@ -25,10 +25,10 @@ class Function : public Binding
 
   protected:
 	/// Generates the signature of the binding
-	void gen_sign() override;
+	virtual void gen_sign() override;
 
 	/// Generates the definition of the bindings
-	void gen_def() override;
+	virtual void gen_def() override;
 
   private:
 	/// Function decl

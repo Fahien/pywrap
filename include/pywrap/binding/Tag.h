@@ -6,6 +6,7 @@
 #include "pywrap/binding/Init.h"
 #include "pywrap/binding/Method.h"
 #include "pywrap/binding/TypeObject.h"
+#include "pywrap/binding/Wrapper.h"
 
 namespace pywrap
 {
@@ -25,7 +26,10 @@ class Tag : public Binding
 
 		/// Adds a method to the methods map
 		/// @param m The method to add
-		void add( const Method& f );
+		void add( const Method& m );
+
+		/// @return The declaration of the methods map
+		std::string get_decl() const override;
 
 		/// @return The definition of the methods map
 		std::string get_def() const override;
@@ -34,11 +38,16 @@ class Tag : public Binding
 		/// Generates the python name of the methods map
 		void gen_py_name() override;
 
-		/// Generates Definition of the methods map
+		/// Generates the signature
+		void gen_sign() override;
+
+		/// Generates the definition of the methods map
 		void gen_def() override;
 
 	  private:
 		const Tag& tag;
+
+		size_t size = 1;
 	};
 
 	/// This represents a PyMemberDef structure
@@ -49,15 +58,23 @@ class Tag : public Binding
 
 		Members( Members&& ) = default;
 
+		/// @return The declaration of the member map
+		std::string get_decl() const override;
+
 	  protected:
 		/// Generates the python name of the members map
 		void gen_py_name() override;
+
+		/// Generates the signature
+		void gen_sign() override;
 
 		/// Generates the definition of the members map
 		void gen_def() override;
 
 	  private:
 		const Tag& tag;
+
+		size_t size = 1;
 	};
 
 	/// Represents a getset map
@@ -68,15 +85,23 @@ class Tag : public Binding
 
 		Accessors( Accessors&& ) = default;
 
+		/// @return The declaration of the getset map
+		std::string get_decl() const override;
+
 	  protected:
 		/// Generates the python name of the getset map
 		void gen_py_name() override;
+
+		/// Generates the signature
+		void gen_sign() override;
 
 		/// Generates the definition of the getset map
 		void gen_def() override;
 
 	  private:
 		const Tag& tag;
+
+		size_t size = 1;
 	};
 
 	/// Generates bindings for a Tag (struct/union/class/enum)
@@ -91,31 +116,64 @@ class Tag : public Binding
 	void init() override;
 
 	/// @return The tag decl
-	const clang::TagDecl* operator->() { return tag; }
+	const clang::TagDecl* operator->()
+	{
+		return tag;
+	}
 
 	/// @return The qualified name
-	const std::string& get_qualified_name() const { return qualified_name; }
+	const std::string& get_qualified_name() const
+	{
+		return qualified_name;
+	}
 
 	/// @return The destructor
-	const Destructor& get_destructor() const { return destructor; }
+	const Destructor& get_destructor() const
+	{
+		return destructor;
+	}
 
 	/// @return The initializer
-	const Init& get_init() const { return initializer; }
+	const Init& get_init() const
+	{
+		return initializer;
+	}
 
 	/// @return The compare func
-	const Compare& get_compare() const { return compare; }
+	const Compare& get_compare() const
+	{
+		return compare;
+	}
 
 	/// @return The methods map
-	const Methods& get_methods() const { return methods; }
+	const Methods& get_methods() const
+	{
+		return methods;
+	}
 
 	/// @return The members map
-	const Members& get_members() const { return members; }
+	const Members& get_members() const
+	{
+		return members;
+	}
 
 	/// @return The getset map
-	const Accessors& get_accessors() const { return accessors; }
+	const Accessors& get_accessors() const
+	{
+		return accessors;
+	}
 
 	/// @return The type object
-	const TypeObject& get_type_object() const { return type_object; }
+	const TypeObject& get_type_object() const
+	{
+		return type_object;
+	}
+
+	/// @return The wrapper specialization
+	const Wrapper& get_wrapper() const
+	{
+		return wrapper;
+	}
 
 	/// @return The declaration
 	std::string get_decl() const override;
@@ -124,7 +182,10 @@ class Tag : public Binding
 	std::string get_def() const override;
 
 	/// @return The registration to the module
-	std::string get_reg() const { return reg.str(); }
+	std::string get_reg() const
+	{
+		return reg.str();
+	}
 
   protected:
 	virtual void gen_reg(){};
@@ -141,7 +202,7 @@ class Tag : public Binding
 
 	/// Destructor
 	Destructor destructor;
-	
+
 	/// Init
 	Init initializer;
 
@@ -159,6 +220,9 @@ class Tag : public Binding
 
 	/// Python type object
 	TypeObject type_object;
+
+	/// Wrapper template specialization
+	Wrapper wrapper;
 };
 }  // namespace binding
 }  // namespace pywrap
