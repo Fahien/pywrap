@@ -19,12 +19,21 @@ class Wrapper : public Binding
 
   protected:
 	/// Generates the signature
-	virtual void gen_sign() override;
+	void gen_sign() override;
+
+	/// Generates the declarations
+	void gen_decl() override;
 
 	/// Generates Wrapper definitions
-	virtual void gen_def() override;
+	void gen_def() override;
 
   private:
+	/// Generates pointer constructor def
+	void gen_pointer_constructor_def();
+
+	/// Generates copy constructor def
+	void gen_copy_constructor_def();
+
 	/// Wrapped Tag
 	const Tag& tag;
 };
