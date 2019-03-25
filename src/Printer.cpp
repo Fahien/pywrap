@@ -48,10 +48,10 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 	// Extern C
 	file << "\n#ifdef __cplusplus\nextern \"C\" {\n#endif // __cplusplus\n\n";
 
+	auto print_decl = [&file]( const binding::Binding& b ) { file << b.get_decl() << '\n'; };
+
 	for ( auto& pr : *modules )
 	{
-		auto print_decl = [&]( const binding::Binding& b ) { file << b.get_decl() << '\n'; };
-
 		auto& module = pr.second;
 
 		// Functions
@@ -63,18 +63,19 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 		std::for_each( enums.begin(), enums.end(), print_decl );
 	}
 
-	for ( auto& decl : m_ClassDeclarations )
-	{
-		file << decl;
-	}
-
 	// End extern C
 	file << "\n#ifdef __cplusplus\n} // extern \"C\"\n#endif // __cplusplus\n\n";
 
-	// Wrapper constructors declarations
-	for ( auto& constr : m_WrapperDeclarations )
+	// Wrapper
+	for ( auto& pr : *modules )
 	{
-		file << constr;
+		auto& module = pr.second;
+
+		auto& enums = module.get_enums();
+		for ( auto& en : enums )
+		{
+			print_decl( en.get_wrapper() );
+		}
 	}
 
 	// End guards
@@ -102,18 +103,6 @@ void Printer::printBindingsSource( llvm::StringRef name )
 		// Enums
 		auto& enums = module.get_enums();
 		std::for_each( enums.begin(), enums.end(), print_def );
-	}
-
-	// Class binding definitions
-	for ( auto& def : m_ClassDefinitions )
-	{
-		file << def;
-	}
-
-	// Wrapper constructors definitions
-	for ( auto& constr : m_WrapperDefinitions )
-	{
-		file << constr;
 	}
 }
 
@@ -157,18 +146,6 @@ void Printer::printExtensionSource( llvm::StringRef name )
 		auto& module = pr.second;
 		file << module.get_methods().get_def();
 		file << module.get_def();
-	}
-
-	// Add objects to module
-	for ( auto& reg : m_ClassRegistrations )
-	{
-		file << reg;
-	}
-
-	// Add enumerators
-	for ( auto& item : m_Enumerators )
-	{
-		file << item;
 	}
 }
 

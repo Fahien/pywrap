@@ -141,8 +141,10 @@ void Tag::init()
 
 std::string Tag::get_decl() const
 {
+	// These declarations will go within extern "C"
+	// Wrapper decl should not go there
 	return destructor.get_decl() + initializer.get_decl() + compare.get_decl() + methods.get_decl() + members.get_decl() +
-	       accessors.get_decl() + type_object.get_decl() + wrapper.get_decl();
+	       accessors.get_decl() + type_object.get_decl();
 }
 
 std::string Tag::get_def() const

@@ -34,6 +34,9 @@ class Wrapper : public Binding
 	/// Generates copy constructor def
 	void gen_copy_constructor_def();
 
+	/// Generates move constructor def
+	void gen_move_constructor_def();
+
 	/// Wrapped Tag
 	const Tag& tag;
 };

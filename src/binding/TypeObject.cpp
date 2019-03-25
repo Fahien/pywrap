@@ -29,7 +29,7 @@ void TypeObject::gen_sign()
 
 void TypeObject::gen_decl()
 {
-	decl << "extern " << get_sign() << ";\n";
+	decl << "extern " << get_sign() << ";\n\n";
 }
 
 void TypeObject::gen_def()
