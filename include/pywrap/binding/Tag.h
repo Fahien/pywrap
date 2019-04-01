@@ -188,7 +188,7 @@ class Tag : public Binding
 	}
 
   protected:
-	virtual void gen_reg(){};
+	virtual void gen_reg();
 
 	/// Module registration
 	std::stringstream reg;

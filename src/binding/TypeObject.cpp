@@ -73,7 +73,7 @@ void TypeObject::gen_def()
 	       "\t0, // dictoffset\n"
 	    << "\treinterpret_cast<initproc>( " << tag.get_init().get_name() << " ), // init\n"
 	    << "\t0, // alloc\n"
-	       "\tPyspotWrapper_New, // new\n};\n\n";
+	       "\tPyspotWrapper_new, // new\n};\n\n";
 }
 }  // namespace binding
 }  // namespace pywrap

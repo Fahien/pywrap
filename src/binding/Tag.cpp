@@ -139,6 +139,17 @@ void Tag::init()
 	gen_reg();
 }
 
+void Tag::gen_reg()
+{
+	auto type_object_name = type_object.get_name();
+
+	reg << "\tif ( PyType_Ready( &" << type_object_name << " ) < 0 )\n"
+	    << "\t{\n\t\treturn;\n\t}\n"
+	    << "\tPy_INCREF( &" << type_object_name << " );\n"
+	    << "\tPyModule_AddObject( module, \"" << get_name() << "\", "
+	    << "reinterpret_cast<PyObject*>( &" << type_object_name << " ) );\n\n";
+}
+
 std::string Tag::get_decl() const
 {
 	// These declarations will go within extern "C"

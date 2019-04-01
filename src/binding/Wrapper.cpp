@@ -48,14 +48,14 @@ void Wrapper::gen_copy_constructor_def()
 	auto type_object_name = tag.get_type_object().get_name();
 
 	// Pointer constructor
-	def << sign.str() << "const" << tag.get_qualified_name() << "& v )\n"
+	def << sign.str() << "const " << tag.get_qualified_name() << "& v )\n"
 	    << ":\tpyspot::Object {\n\t\t(\n"
 	    << "\t\t\tPyType_Ready( &" << type_object_name << " ),\n"
 	    << "\t\t\tPyspotWrapper_new( &" << type_object_name << ", nullptr, nullptr )\n\t\t)\n\t}\n"
 	    << ",\tpayload { new " << tag.get_qualified_name() << " { v } }\n{\n"
 	    << "\tauto wrapper = reinterpret_cast<_PyspotWrapper*>( object );\n"
 	    << "\twrapper->data = payload;\n"
-		<< "\twrapper->own_data = true;\n"
+	    << "\twrapper->own_data = true;\n"
 	    << "}\n\n";
 }
 
@@ -70,7 +70,7 @@ void Wrapper::gen_move_constructor_def()
 	    << ",\tpayload { new " << tag.get_qualified_name() << " { std::move( v ) } }\n{\n"
 	    << "\tauto wrapper = reinterpret_cast<_PyspotWrapper*>( object );\n"
 	    << "\twrapper->data = payload;\n"
-		<< "\twrapper->own_data = true;\n"
+	    << "\twrapper->own_data = true;\n"
 	    << "}\n\n";
 }
 
