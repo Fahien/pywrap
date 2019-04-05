@@ -92,5 +92,11 @@ void Module::add( Enum&& e )
 	enums.emplace_back( std::move( e ) );
 }
 
+void Module::add( CXXRecord&& r )
+{
+	def << r.get_reg();
+	records.emplace_back( std::move( r ) );
+}
+
 }  // namespace binding
 }  // namespace pywrap

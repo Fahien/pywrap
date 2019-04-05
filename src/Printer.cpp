@@ -36,10 +36,13 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 		auto& module = pr.second;
 
 		auto& functions = module.get_functions();
-		auto& enums     = module.get_enums();
+		std::for_each( std::begin( functions ), std::end( functions ), process_include );
 
-		std::for_each( functions.begin(), functions.end(), process_include );
-		std::for_each( enums.begin(), enums.end(), process_include );
+		auto& enums = module.get_enums();
+		std::for_each( std::begin( enums ), std::end( enums ), process_include );
+
+		auto& records = module.get_records();
+		std::for_each( std::begin( records ), std::end( records ), process_include );
 	}
 
 	// Tail includes
@@ -56,17 +59,21 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 
 		// Functions
 		auto& functions = module.get_functions();
-		std::for_each( functions.begin(), functions.end(), print_decl );
+		std::for_each( std::begin( functions ), std::end( functions ), print_decl );
 
 		// Enums
 		auto& enums = module.get_enums();
-		std::for_each( enums.begin(), enums.end(), print_decl );
+		std::for_each( std::begin( enums ), std::end( enums ), print_decl );
+
+		// Structs, unions, classes
+		auto& records = module.get_records();
+		std::for_each( std::begin( records ), std::end( records ), print_decl );
 	}
 
 	// End extern C
 	file << "\n#ifdef __cplusplus\n} // extern \"C\"\n#endif // __cplusplus\n\n";
 
-	// Wrapper
+	// Wrappers
 	for ( auto& pr : *modules )
 	{
 		auto& module = pr.second;
@@ -75,6 +82,12 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 		for ( auto& en : enums )
 		{
 			print_decl( en.get_wrapper() );
+		}
+
+		auto& records = module.get_records();
+		for ( auto& record : records )
+		{
+			print_decl( record.get_wrapper() );
 		}
 	}
 
@@ -103,6 +116,10 @@ void Printer::printBindingsSource( llvm::StringRef name )
 		// Enums
 		auto& enums = module.get_enums();
 		std::for_each( enums.begin(), enums.end(), print_def );
+
+		// CXXRecord
+		auto& records = module.get_records();
+		std::for_each( records.begin(), records.end(), print_def );
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include "pywrap/binding/CXXRecord.h"
 #include "pywrap/binding/Enum.h"
 #include "pywrap/binding/Function.h"
 #include "pywrap/binding/Module.h"
@@ -49,21 +50,21 @@ std::string MatchHandler::get_include_path( const clang::Decl* const pDecl )
 }
 
 MatchHandler::PyTag::PyTag( const clang::ASTContext* pCtx, const clang::TagDecl* const pTagDecl, TemplateMap&& tMap )
-    : pContext{ pCtx },
-      pDecl{ pTagDecl },
-      m_TemplateMap{ std::move( tMap ) },
-      m_AngledArgs{ createAngledArgs() },
-      name{ pDecl->getNameAsString() + m_AngledArgs },
-      qualifiedName{ pDecl->getQualifiedNameAsString() + m_AngledArgs },
-      pyName{ to_pyspot_name( qualifiedName ) },
-      init{ *this },
-      destructor{ *this },
-      compare{ *this },
-      methods{ *this },
-      accessors{ *this },
-      members{ *this },
-      typeObject{ *this },
-      enums{ *this }
+    : pContext{ pCtx }
+    , pDecl{ pTagDecl }
+    , m_TemplateMap{ std::move( tMap ) }
+    , m_AngledArgs{ createAngledArgs() }
+    , name{ pDecl->getNameAsString() + m_AngledArgs }
+    , qualifiedName{ pDecl->getQualifiedNameAsString() + m_AngledArgs }
+    , pyName{ to_pyspot_name( qualifiedName ) }
+    , init{ *this }
+    , destructor{ *this }
+    , compare{ *this }
+    , methods{ *this }
+    , accessors{ *this }
+    , members{ *this }
+    , typeObject{ *this }
+    , enums{ *this }
 {
 }
 
@@ -89,9 +90,15 @@ std::string MatchHandler::PyTag::createAngledArgs()
 	return os.str();
 }
 
-const clang::EnumDecl* MatchHandler::PyTag::AsEnum() const { return clang::dyn_cast<clang::EnumDecl>( pDecl ); }
+const clang::EnumDecl* MatchHandler::PyTag::AsEnum() const
+{
+	return clang::dyn_cast<clang::EnumDecl>( pDecl );
+}
 
-const clang::CXXRecordDecl* MatchHandler::PyTag::AsClass() const { return clang::dyn_cast<clang::CXXRecordDecl>( pDecl ); }
+const clang::CXXRecordDecl* MatchHandler::PyTag::AsClass() const
+{
+	return clang::dyn_cast<clang::CXXRecordDecl>( pDecl );
+}
 
 const clang::TemplateArgument* MatchHandler::PyTag::GetTemplateArg( const std::string& type ) const
 {
@@ -105,10 +112,10 @@ const clang::TemplateArgument* MatchHandler::PyTag::GetTemplateArg( const std::s
 }
 
 MatchHandler::PyClass::PyClass( const clang::ASTContext* pCtx, const clang::CXXRecordDecl* const pClass )
-    : PyTag{ pCtx, pClass },
-      bHasDefaultConstructor{ pClass->hasDefaultConstructor() },
-      bHasCopyConstructor{ pClass->hasCopyConstructorWithConstParam() },
-      bHasMoveConstructor{ pClass->hasMoveConstructor() }
+    : PyTag{ pCtx, pClass }
+    , bHasDefaultConstructor{ pClass->hasDefaultConstructor() }
+    , bHasCopyConstructor{ pClass->hasCopyConstructorWithConstParam() }
+    , bHasMoveConstructor{ pClass->hasMoveConstructor() }
 {
 }
 
@@ -267,7 +274,8 @@ void MatchHandler::PyInit::Add( const clang::CXXConstructorDecl* pConstructor )
 			{
 				qualType  = owner.GetTemplateArg( qualType.getAsString() )->getAsType();
 				paramType = qualType.getAsString();
-			} else
+			}
+			else
 			{
 				paramType = pywrap::to_string( qualType, owner.GetTemplateMap(), *owner.pContext );
 			}
@@ -291,7 +299,8 @@ void MatchHandler::PyInit::Add( const clang::CXXConstructorDecl* pConstructor )
 			definition += paramType;
 			definition += " " + paramName + " {};\n";
 			callArglist += paramName + ", ";
-		} else
+		}
+		else
 		{
 			// Wrapper
 			definition += "PyObject* " + paramName + " {};\n";
@@ -337,7 +346,8 @@ void MatchHandler::PyInit::Add( const clang::CXXConstructorDecl* pConstructor )
 			{
 				qualType  = owner.GetTemplateArg( qualType.getAsString() )->getAsType();
 				paramType = qualType.getAsString();
-			} else
+			}
+			else
 			{
 				paramType = pywrap::to_string( qualType, owner.GetTemplateMap(), *owner.pContext );
 			}
@@ -346,7 +356,8 @@ void MatchHandler::PyInit::Add( const clang::CXXConstructorDecl* pConstructor )
 		if ( qualType->isBuiltinType() )
 		{
 			constructorArgList += paramName;
-		} else
+		}
+		else
 		{
 			// Get type as pointer
 			if ( paramType.back() == '&' )
@@ -488,7 +499,8 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 			{
 				qualType  = pyTag.GetTemplateArg( qualType.getAsString() )->getAsType();
 				paramType = qualType.getAsString();
-			} else
+			}
+			else
 			{
 				paramType = pywrap::to_string( qualType, pyTag.GetTemplateMap(), *pyTag.pContext );
 			}
@@ -502,7 +514,8 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 			methodDecl.definition += paramType;
 			methodDecl.definition += " " + paramName + " {};\n";
 			callArglist += paramName + ", ";
-		} else if ( qualType->isPointerType() )
+		}
+		else if ( qualType->isPointerType() )
 		{
 			auto pPointeeType = qualType->getPointeeOrArrayElementType();
 			if ( pPointeeType->isAnyCharacterType() )
@@ -510,7 +523,8 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 				methodDecl.definition += "PyObject* " + paramName + ";\n";
 				callArglist += pywrap::to_c( paramType, paramName ) + ", ";
 			}
-		} else
+		}
+		else
 		{
 			// Wrapper
 			methodDecl.definition += "_PyspotWrapper* " + paramName + " {};\n";
@@ -551,7 +565,8 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 		methodDecl.definition += "\t" + call +
 		                         ";\n"
 		                         "\tPy_INCREF( Py_None );\n\treturn Py_None;\n}\n\n";
-	} else
+	}
+	else
 	{
 		auto trueType   = pywrap::to_type( pMethod->getReturnType(), pyTag.GetTemplateMap() );
 		auto returnType = pywrap::to_string( trueType, pyTag.GetTemplateMap(), *pyTag.pContext );
@@ -666,7 +681,10 @@ MatchHandler::PyEnums::PyEnums( const PyTag& pyTag )
 	}
 }
 
-void MatchHandler::PyEnums::Flush( FrontendAction& action ) { action.AddEnumerator( definition ); }
+void MatchHandler::PyEnums::Flush( FrontendAction& action )
+{
+	action.AddEnumerator( definition );
+}
 
 MatchHandler::WrapperConstructors::WrapperConstructors( const PyTag& pyTag, const std::string& objectName )
 {
@@ -774,17 +792,20 @@ void MatchHandler::PyTag::Flush( FrontendAction& action )
 			if ( !bPublic || bDestructor )
 			{
 				continue;
-			} else if ( bConstructor )
+			}
+			else if ( bConstructor )
 			{
 				auto pConstr = clang::dyn_cast<clang::CXXConstructorDecl>( pMethod );
 				if ( !pConstr->isCopyOrMoveConstructor() )
 				{
 					init.Add( pConstr );
 				}
-			} else if ( bOverloaded )
+			}
+			else if ( bOverloaded )
 			{
 				compare.Add( pMethod->getOverloadedOperator() );
-			} else
+			}
+			else
 			{
 				PyMethod method{ *this, pMethod };
 				if ( methods.Add( method ) )
@@ -884,13 +905,18 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 		// Add the function to the module
 		module.add( create_binding<binding::Function>( func_decl ) );
 	}
-	// generate_enum_bindings
+	// Generate enum bindings
 	else if ( auto enum_decl = clang::dyn_cast<clang::EnumDecl>( decl ) )
 	{
 		// Add the enum to the module
 		module.add( create_binding<binding::Enum>( enum_decl ) );
 	}
-	// generate_struct_bindings
+	// Generate struct/union/class bindings
+	else if ( auto record_decl = clang::dyn_cast<clang::CXXRecordDecl>( decl ) )
+	{
+		// Add the record to the module
+		module.add( create_binding<binding::CXXRecord>( record_decl ) );
+	}
 }
 
 void MatchHandler::run( const clang::ast_matchers::MatchFinder::MatchResult& result )

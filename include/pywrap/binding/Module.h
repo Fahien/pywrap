@@ -5,6 +5,7 @@
 
 #include <clang/AST/Decl.h>
 
+#include "pywrap/binding/CXXRecord.h"
 #include "pywrap/binding/Enum.h"
 #include "pywrap/binding/Function.h"
 
@@ -58,14 +59,33 @@ class Module : public Binding
 	/// @param[in] e The enum to add to this module
 	void add( Enum&& e );
 
+	/// Adds a record to this module
+	/// @param[in] r The record to add to this module
+	void add( CXXRecord&& r );
+
 	/// @return The methods map for the module init function
-	const Methods& get_methods() const { return methods; }
+	const Methods& get_methods() const
+	{
+		return methods;
+	}
 
 	/// @return Functions associated with the module
-	const std::vector<Function>& get_functions() const { return functions; }
+	const std::vector<Function>& get_functions() const
+	{
+		return functions;
+	}
 
 	/// @return Enums associated with the module
-	const std::vector<Enum>& get_enums() const { return enums; }
+	const std::vector<Enum>& get_enums() const
+	{
+		return enums;
+	}
+
+	/// @return CXXRecords associated with the module
+	const std::vector<CXXRecord>& get_records() const
+	{
+		return records;
+	}
 
   protected:
 	/// @return The Python name of the binding
@@ -89,6 +109,9 @@ class Module : public Binding
 
 	/// Module enums
 	std::vector<Enum> enums;
+
+	/// Module records
+	std::vector<CXXRecord> records;
 };
 
 }  // namespace binding

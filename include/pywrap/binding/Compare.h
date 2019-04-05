@@ -23,8 +23,12 @@ class Compare : public Binding
 	void gen_def() override;
 
   private:
+	/// Generates operator equals
+	void gen_eq();
+
 	const Tag& tag;
 };
+
 }  // namespace binding
 }  // namespace pywrap
 #endif  // PYWRAP_BINDING_COMPARE_H_

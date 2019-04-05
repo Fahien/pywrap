@@ -116,7 +116,13 @@ class Tag : public Binding
 	void init() override;
 
 	/// @return The tag decl
-	const clang::TagDecl* operator->()
+	const clang::TagDecl* operator->() const
+	{
+		return tag;
+	}
+
+	/// @return The tag decl
+	const clang::TagDecl* get_handle() const
 	{
 		return tag;
 	}
@@ -224,6 +230,7 @@ class Tag : public Binding
 	/// Wrapper template specialization
 	Wrapper wrapper;
 };
+
 }  // namespace binding
 }  // namespace pywrap
 
