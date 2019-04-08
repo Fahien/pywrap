@@ -77,7 +77,8 @@ inline std::string to_string( const clang::QualType& type, const TemplateMap& tM
 	if ( typ->isReferenceType() )
 	{
 		typ = typ.getNonReferenceType();
-	} else if ( typ->isPointerType() )
+	}
+	else if ( typ->isPointerType() )
 	{
 		// typeTail = "*";
 		typ = typ->getPointeeType();
@@ -101,12 +102,14 @@ inline std::string to_string( const clang::QualType& type, const TemplateMap& tM
 		}
 		ret[ret.length() - 1] = '>';
 		ret += typeTail + tail;
-	} else if ( typ->isTemplateTypeParmType() )
+	}
+	else if ( typ->isTemplateTypeParmType() )
 	{
 		auto it = tMap.find( typ.getUnqualifiedType().getAsString() );
 		assert( it != tMap.end() && "Template parameter not found" );
 		ret += it->second->getAsType().getAsString() + typeTail;
-	} else
+	}
+	else
 	{
 		// Reset ret
 		ret = typeString;
@@ -123,7 +126,8 @@ inline clang::QualType to_type( const clang::QualType& type, const TemplateMap& 
 	if ( type->isReferenceType() )
 	{
 		tempType = type.getNonReferenceType();
-	} else if ( type->isPointerType() )
+	}
+	else if ( type->isPointerType() )
 	{
 		tempType = type->getPointeeType();
 	}
@@ -168,7 +172,8 @@ static std::string to_python( const clang::QualType& type, const std::string& na
 	if ( type.getAsString().find( "std::string" ) != std::string::npos )
 	{
 		return "PyUnicode_FromString( " + name + ".c_str() )";
-	} else
+	}
+	else
 	{
 		auto ret = "pyspot::Wrapper<" + type.getAsString() + ">{ ";
 		if ( type->isReferenceType() )
@@ -210,7 +215,8 @@ inline std::string to_python( const clang::QualType& type, const std::string& na
 	if ( realType.getAsString().find( "std::string" ) != std::string::npos )
 	{
 		return "PyUnicode_FromString( " + name + ".c_str() )";
-	} else
+	}
+	else
 	{
 		auto ret = "pyspot::Wrapper<" + pywrap::to_string( type, tMap, ctx ) + ">{ ";
 		if ( type->isReferenceType() )
@@ -252,7 +258,8 @@ inline std::string to_c( std::string type, const std::string& name )
 	if ( type.find( "std::string" ) != std::string::npos )
 	{
 		return "pyspot::String{ " + name + " }.ToCString()";
-	} else
+	}
+	else
 	{
 		if ( type.substr( 0, 5 ) == "class" )
 		{
@@ -263,7 +270,7 @@ inline std::string to_c( std::string type, const std::string& name )
 }
 
 
-inline std::string to_parser( const clang::QualType& type )
+inline std::string to_py_parser( const clang::QualType& type )
 {
 	if ( type->isIntegerType() )
 	{

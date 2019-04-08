@@ -55,7 +55,7 @@ void Compare::gen_def()
 		gen_eq();
 	}
 
-	def << "}\n\n";  // end
+	def << "\tPy_INCREF(Py_False);\n\treturn Py_False;\n}\n\n";  // end
 }
 
 }  // namespace binding

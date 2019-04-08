@@ -66,8 +66,22 @@ void Module::gen_def()
 	std::stringstream module_exception_name;
 	module_exception_name << get_name() << "_" << exception.str();
 
-	def << sign.str() << "\n{\n\tauto module = Py_InitModule( \"" << get_name() << "\", " << methods.get_py_name()
-	    << " );\n\n"
+	def << "char description[] = \"" << get_name() << "\";\n\n"
+	    << "struct ModuleState\n{\n"
+	    << "\tPyObject* error;\n};\n\n"
+	    << "PyModuleDef module_def {\n"
+	    << "\tPyModuleDef_HEAD_INIT,\n"
+	    << "\tdescription,\n"
+	    << "\tnullptr,\n"
+	    << "\tsizeof( ModuleState ),\n"
+	    << "\t" << methods.get_py_name() << ",\n"
+	    << "\tnullptr,\n"
+	    << "\tnullptr,\n"
+	    << "\tnullptr,\n"
+	    << "\tnullptr,\n};\n\n"
+	    // Module init function
+	    << sign.str() << "\n{\n"
+	    << "\tauto module = PyModule_Create( &module_def );\n\n"
 	    << "\tstatic char " << module_exception_name.str() << "[] = { \"" << get_name() << ".exception\" };\n"
 	    << "\tauto " << exception.str() << " = PyErr_NewException( " << module_exception_name.str() << ", NULL, NULL );\n"
 	    << "\tPy_INCREF( " << exception.str() << " );\n"
@@ -77,7 +91,7 @@ void Module::gen_def()
 
 std::string Module::get_def() const
 {
-	return def.str() + "}\n";
+	return def.str() + "\treturn module;\n}\n";
 }
 
 void Module::add( Function&& f )

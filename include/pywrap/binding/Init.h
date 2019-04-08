@@ -1,6 +1,8 @@
 #ifndef PYWRAP_BINDING_INIT_H_
 #define PYWRAP_BINDING_INIT_H_
 
+#include <clang/AST/DeclCXX.h>
+
 #include "pywrap/binding/Binding.h"
 
 namespace pywrap
@@ -25,6 +27,10 @@ class Init : public Binding
 	void gen_def() override;
 
   private:
+	/// Adds a constructor to the definition of the initializer
+	/// @param[in] constructor Constructor to support
+	void add_def( const clang::CXXConstructorDecl& constructor );
+
 	const Tag& tag;
 };
 }  // namespace binding

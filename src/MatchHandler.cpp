@@ -291,7 +291,7 @@ void MatchHandler::PyInit::Add( const clang::CXXConstructorDecl* pConstructor )
 			--positionalCount;
 		}
 
-		fmt += pywrap::to_parser( qualType );
+		fmt += pywrap::to_py_parser( qualType );
 
 		definition += "\t\t";
 		if ( qualType->isBuiltinType() )
@@ -506,7 +506,7 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 			}
 		}
 
-		fmt += pywrap::to_parser( qualType );
+		fmt += pywrap::to_py_parser( qualType );
 
 		methodDecl.definition += "\t";
 		if ( qualType->isBuiltinType() )

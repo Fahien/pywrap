@@ -76,7 +76,7 @@ void Function::gen_def()
 				// TODO Handle template functions
 			}
 			// So we can convert it properly
-			fmt << pywrap::to_parser( qualType );
+			fmt << pywrap::to_py_parser( qualType );
 
 			// We then need to call this function passing this argument, which is
 			// coming in as a python type, so we need to parse it using ParseTupleAndKeywords
