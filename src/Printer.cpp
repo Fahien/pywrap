@@ -216,7 +216,7 @@ void Printer::printExtensionSource( llvm::StringRef name )
 }
 
 
-void Printer::PrintOut( const std::unordered_map<const clang::NamespaceDecl*, binding::Module>& m )
+void Printer::PrintOut( const std::unordered_map<std::string, binding::Module>& m )
 {
 	// TODO make member variable
 	modules = &m;

@@ -20,6 +20,12 @@ class Binding
 
 	Binding( Binding&& ) = default;
 
+	/// @return An unique id
+	const std::string& get_id() const
+	{
+		return id;
+	}
+
 	/// Initializes the members
 	virtual void init();
 
@@ -83,6 +89,9 @@ class Binding
 
 	/// Named decl
 	const clang::NamedDecl* named{ nullptr };
+
+	/// Qualified name as unique id
+	std::string id;
 
 	/// Parent
 	const Binding* parent{ nullptr };

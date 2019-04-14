@@ -10,7 +10,7 @@
 
 namespace pywrap
 {
-MatchHandler::MatchHandler( std::unordered_map<const clang::NamespaceDecl*, binding::Module>& m, FrontendAction& frontend )
+MatchHandler::MatchHandler( std::unordered_map<std::string, binding::Module>& m, FrontendAction& frontend )
     : modules{ m }, m_Frontend{ frontend }, m_Cwd{ getCwd() }
 {
 }
@@ -871,7 +871,7 @@ binding::Module& MatchHandler::get_module( const clang::DeclContext* ctx )
 	assert( ctx && "Context not valid" );
 	auto namespace_decl = clang::dyn_cast<clang::NamespaceDecl>( ctx );
 
-	auto id = namespace_decl->getFirstDecl();
+	auto id = namespace_decl->getQualifiedNameAsString();
 
 	// Nested namespace
 	auto namespace_context = namespace_decl->getDeclContext();
@@ -881,7 +881,7 @@ binding::Module& MatchHandler::get_module( const clang::DeclContext* ctx )
 		// Find the module within the children of the parent
 		auto& children = parent.get_children();
 		auto  it       = std::find_if( std::begin( children ), std::end( children ),
-                                [id]( binding::Module& child ) { return child.get_handle()->getFirstDecl() == id; } );
+                                [id]( binding::Module& child ) { return child.get_id() == id; } );
 		if ( it == std::end( children ) )
 		{
 			// Create if not found
@@ -926,7 +926,9 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 	if ( auto func_decl = clang::dyn_cast<clang::FunctionDecl>( decl ) )
 	{
 		auto it = find_if( std::begin( module.get_functions() ), std::end( module.get_functions() ),
-		                   [func_decl]( const binding::Function& func ) { return func.get_func() == func_decl; } );
+		                   [func_decl]( const binding::Function& func ) {
+			                   return func.get_id() == func_decl->getQualifiedNameAsString();
+		                   } );
 		if ( it == std::end( module.get_functions() ) )
 		{
 			// Add the function to the module
@@ -936,8 +938,9 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 	// Generate enum bindings
 	else if ( auto enum_decl = clang::dyn_cast<clang::EnumDecl>( decl ) )
 	{
-		auto it = find_if( std::begin( module.get_enums() ), std::end( module.get_enums() ),
-		                   [enum_decl]( const binding::Enum& enu ) { return enu.get_handle() == enum_decl; } );
+		auto it = find_if(
+		    std::begin( module.get_enums() ), std::end( module.get_enums() ),
+		    [enum_decl]( const binding::Enum& enu ) { return enu.get_id() == enum_decl->getQualifiedNameAsString(); } );
 		if ( it == std::end( module.get_enums() ) )
 		{
 			// Add the enum to the module
@@ -947,9 +950,10 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 	// Generate struct/union/class bindings
 	else if ( auto record_decl = clang::dyn_cast<clang::CXXRecordDecl>( decl ) )
 	{
-		auto it =
-		    find_if( std::begin( module.get_records() ), std::end( module.get_records() ),
-		             [record_decl]( const binding::CXXRecord& record ) { return record.get_handle() == record_decl; } );
+		auto it = find_if( std::begin( module.get_records() ), std::end( module.get_records() ),
+		                   [record_decl]( const binding::CXXRecord& record ) {
+			                   return record.get_id() == record_decl->getQualifiedNameAsString();
+		                   } );
 		if ( it == std::end( module.get_records() ) )
 		{
 			// Add the record to the module

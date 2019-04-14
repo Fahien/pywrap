@@ -13,7 +13,7 @@ namespace pywrap
 class Consumer : public clang::ASTConsumer
 {
   public:
-	Consumer( std::unordered_map<const clang::NamespaceDecl*, binding::Module>& m, FrontendAction& frontend );
+	Consumer( std::unordered_map<std::string, binding::Module>& m, FrontendAction& frontend );
 
 	void HandleTranslationUnit( clang::ASTContext& context ) override;
 

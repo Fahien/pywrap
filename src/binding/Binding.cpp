@@ -7,7 +7,8 @@ namespace pywrap
 {
 namespace binding
 {
-Binding::Binding( const clang::NamedDecl* n, const Binding* p ) : named{ n }, parent{ p }
+Binding::Binding( const clang::NamedDecl* n, const Binding* p )
+    : named{ n }, id{ n ? n->getQualifiedNameAsString() : "" }, parent{ p }
 {
 }
 

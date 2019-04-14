@@ -63,7 +63,7 @@ class Printer
 	}
 
 	/// @brief Finishes handling the files
-	void PrintOut( const std::unordered_map<const clang::NamespaceDecl*, binding::Module>& modules );
+	void PrintOut( const std::unordered_map<std::string, binding::Module>& modules );
 
   private:
 	/// @brief Prints bindings header
@@ -102,7 +102,7 @@ class Printer
 	/// @param[in] module The current module to process
 	void process_defs( llvm::raw_fd_ostream& file, const binding::Module& module );
 
-	const std::unordered_map<const clang::NamespaceDecl*, binding::Module>* modules;
+	const std::unordered_map<std::string, binding::Module>* modules;
 
 	/// Extension name
 	const std::string m_ExtensionName;

@@ -17,7 +17,7 @@ namespace pywrap
 class FrontendAction : public clang::ASTFrontendAction
 {
   public:
-	FrontendAction( std::unordered_map<const clang::NamespaceDecl*, binding::Module>& m, Printer& printer )
+	FrontendAction( std::unordered_map<std::string, binding::Module>& m, Printer& printer )
 	    : modules{ m }, m_Printer{ printer }
 	{
 	}
@@ -76,7 +76,7 @@ class FrontendAction : public clang::ASTFrontendAction
 
   private:
 	/// Map to be populated by the consumer
-	std::unordered_map<const clang::NamespaceDecl*, binding::Module>& modules;
+	std::unordered_map<std::string, binding::Module>& modules;
 
 	Printer& m_Printer;
 
@@ -97,7 +97,7 @@ class FrontendActionFactory : public clang::tooling::FrontendActionFactory
 	}
 
 	/// @return The modules created by the action
-	std::unordered_map<const clang::NamespaceDecl*, binding::Module>& get_modules()
+	std::unordered_map<std::string, binding::Module>& get_modules()
 	{
 		return modules;
 	};
@@ -105,7 +105,7 @@ class FrontendActionFactory : public clang::tooling::FrontendActionFactory
   private:
 	Printer& m_Printer;
 
-	std::unordered_map<const clang::NamespaceDecl*, binding::Module> modules;
+	std::unordered_map<std::string, binding::Module> modules;
 };
 
 

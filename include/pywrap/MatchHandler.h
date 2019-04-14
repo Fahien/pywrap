@@ -17,7 +17,7 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
   public:
 	/// @brief Constructs the handler for a Pyspot class match
 	/// @param[in] modules Map to populate with modules
-	MatchHandler( std::unordered_map<const clang::NamespaceDecl*, binding::Module>& m, FrontendAction& );
+	MatchHandler( std::unordered_map<std::string, binding::Module>& m, FrontendAction& );
 
 	/// @return The cwd using forward slashes
 	static std::string getCwd();
@@ -45,7 +45,7 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 	binding::Module& get_module( const clang::DeclContext* ctx );
 
 	/// Map of global id of the DeclContext and the associated Module
-	std::unordered_map<const clang::NamespaceDecl*, binding::Module>& modules;
+	std::unordered_map<std::string, binding::Module>& modules;
 
 	/// @param[in] decl Decl we want to get the path
 	/// @return A proper include path
