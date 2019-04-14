@@ -1,5 +1,6 @@
 #include "pywrap/MatchHandler.h"
 
+#include <algorithm>
 #include <sstream>
 
 #include "pywrap/binding/CXXRecord.h"
@@ -9,7 +10,7 @@
 
 namespace pywrap
 {
-MatchHandler::MatchHandler( std::unordered_map<unsigned int, binding::Module>& m, FrontendAction& frontend )
+MatchHandler::MatchHandler( std::unordered_map<const clang::NamespaceDecl*, binding::Module>& m, FrontendAction& frontend )
     : modules{ m }, m_Frontend{ frontend }, m_Cwd{ getCwd() }
 {
 }
@@ -867,10 +868,31 @@ void MatchHandler::handleTag( const clang::TagDecl* pTag, TemplateMap&& tMap )
 
 binding::Module& MatchHandler::get_module( const clang::DeclContext* ctx )
 {
-	assert( ctx && ctx->isNamespace() && "Function should be in a namespace" );
+	assert( ctx && "Context not valid" );
 	auto namespace_decl = clang::dyn_cast<clang::NamespaceDecl>( ctx );
-	// Find the module
-	auto id = namespace_decl->getGlobalID();
+
+	auto id = namespace_decl->getFirstDecl();
+
+	// Nested namespace
+	auto namespace_context = namespace_decl->getDeclContext();
+	if ( namespace_context->isNamespace() )
+	{
+		auto& parent = get_module( namespace_context );
+		// Find the module within the children of the parent
+		auto& children = parent.get_children();
+		auto  it       = std::find_if( std::begin( children ), std::end( children ),
+                                [id]( binding::Module& child ) { return child.get_handle()->getFirstDecl() == id; } );
+		if ( it == std::end( children ) )
+		{
+			// Create if not found
+			parent.add( binding::Module{ namespace_decl, &parent } );
+			return children.back();
+		}
+		// Return the module
+		return *it;
+	}
+
+	// Find it between the root modules
 	auto it = modules.find( id );
 	if ( it == modules.end() )
 	{
@@ -885,37 +907,54 @@ binding::Module& MatchHandler::get_module( const clang::DeclContext* ctx )
 }
 
 template <typename B, typename D>
-B MatchHandler::create_binding( const D* decl )
+B MatchHandler::create_binding( const D* decl, const binding::Binding& parent )
 {
-	B binding{ decl };
+	B binding{ decl, parent };
 	binding.set_incl( get_include_path( decl ) );
 	return binding;
 }
 
 void MatchHandler::generate_bindings( const clang::Decl* decl )
 {
-	// The function should be in a namespace
+	// The decl should have a declaration context
 	// TODO But an enum can be in a class as well
-	auto  ctx    = decl->getDeclContext();
+	auto ctx = decl->getDeclContext();
+	assert( ctx && "Decl should have a declaration context" );
 	auto& module = get_module( ctx );
 
 	// Switch according to the decl
 	if ( auto func_decl = clang::dyn_cast<clang::FunctionDecl>( decl ) )
 	{
-		// Add the function to the module
-		module.add( create_binding<binding::Function>( func_decl ) );
+		auto it = find_if( std::begin( module.get_functions() ), std::end( module.get_functions() ),
+		                   [func_decl]( const binding::Function& func ) { return func.get_func() == func_decl; } );
+		if ( it == std::end( module.get_functions() ) )
+		{
+			// Add the function to the module
+			module.add( create_binding<binding::Function>( func_decl, module ) );
+		}
 	}
 	// Generate enum bindings
 	else if ( auto enum_decl = clang::dyn_cast<clang::EnumDecl>( decl ) )
 	{
-		// Add the enum to the module
-		module.add( create_binding<binding::Enum>( enum_decl ) );
+		auto it = find_if( std::begin( module.get_enums() ), std::end( module.get_enums() ),
+		                   [enum_decl]( const binding::Enum& enu ) { return enu.get_handle() == enum_decl; } );
+		if ( it == std::end( module.get_enums() ) )
+		{
+			// Add the enum to the module
+			module.add( create_binding<binding::Enum>( enum_decl, module ) );
+		}
 	}
 	// Generate struct/union/class bindings
 	else if ( auto record_decl = clang::dyn_cast<clang::CXXRecordDecl>( decl ) )
 	{
-		// Add the record to the module
-		module.add( create_binding<binding::CXXRecord>( record_decl ) );
+		auto it =
+		    find_if( std::begin( module.get_records() ), std::end( module.get_records() ),
+		             [record_decl]( const binding::CXXRecord& record ) { return record.get_handle() == record_decl; } );
+		if ( it == std::end( module.get_records() ) )
+		{
+			// Add the record to the module
+			module.add( create_binding<binding::CXXRecord>( record_decl, module ) );
+		}
 	}
 }
 

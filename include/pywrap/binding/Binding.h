@@ -14,8 +14,7 @@ namespace binding
 class Binding
 {
   public:
-	Binding() = default;
-	Binding( const clang::NamedDecl* n );
+	Binding( const clang::NamedDecl* n = nullptr, const Binding* parent = nullptr );
 
 	virtual ~Binding() = default;
 
@@ -25,25 +24,46 @@ class Binding
 	virtual void init();
 
 	/// @return The relative path to the header
-	const std::string& get_incl() const { return incl; }
+	const std::string& get_incl() const
+	{
+		return incl;
+	}
 
 	/// @return The original name
-	std::string get_name() const { return name.str(); }
+	std::string get_name() const
+	{
+		return name.str();
+	}
 
 	/// @return The python name
-	std::string get_py_name() const { return py_name.str(); }
+	std::string get_py_name() const
+	{
+		return py_name.str();
+	}
 
 	/// @return The signature of the binding
-	std::string get_sign() const { return sign.str(); }
+	std::string get_sign() const
+	{
+		return sign.str();
+	}
 
 	/// @return The declaration of the binding
-	virtual std::string get_decl() const { return decl.str(); }
+	virtual std::string get_decl() const
+	{
+		return decl.str();
+	}
 
 	/// @return The definition of the binding
-	virtual std::string get_def() const { return def.str(); }
+	virtual std::string get_def() const
+	{
+		return def.str();
+	}
 
 	/// Generates the relative path to the header
-	void set_incl( const std::string& i ) { incl = i; }
+	void set_incl( const std::string& i )
+	{
+		incl = i;
+	}
 
   protected:
 	/// Generates the name of the binding
@@ -63,6 +83,9 @@ class Binding
 
 	/// Named decl
 	const clang::NamedDecl* named{ nullptr };
+
+	/// Parent
+	const Binding* parent{ nullptr };
 
 	/// Relative path
 	std::string incl;

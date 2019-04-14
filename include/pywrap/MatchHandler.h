@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include <clang/AST/Decl.h>
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 
 #include "pywrap/FrontendAction.h"
@@ -16,7 +17,7 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
   public:
 	/// @brief Constructs the handler for a Pyspot class match
 	/// @param[in] modules Map to populate with modules
-	MatchHandler( std::unordered_map<unsigned int, binding::Module>& m, FrontendAction& );
+	MatchHandler( std::unordered_map<const clang::NamespaceDecl*, binding::Module>& m, FrontendAction& );
 
 	/// @return The cwd using forward slashes
 	static std::string getCwd();
@@ -26,7 +27,7 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 	virtual void run( const clang::ast_matchers::MatchFinder::MatchResult& );
 
 	/// @brief Generates python bindings for a @ref clang::Decl
-	/// @param decl A Decl which can be a variable, a function, a struct, ...
+	/// @param[in] decl A Decl which can be a variable, a function, a struct, ...
 	void generate_bindings( const clang::Decl* decl );
 
 	/// @brief Generate python bindings for a @ref clang::FunctionDecl
@@ -44,16 +45,17 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 	binding::Module& get_module( const clang::DeclContext* ctx );
 
 	/// Map of global id of the DeclContext and the associated Module
-	std::unordered_map<unsigned int, binding::Module>& modules;
+	std::unordered_map<const clang::NamespaceDecl*, binding::Module>& modules;
 
 	/// @param[in] decl Decl we want to get the path
 	/// @return A proper include path
 	std::string get_include_path( const clang::Decl* const decl );
 
 	/// Generates a binding instance
-	/// @param decl The decl to wrap
+	/// @param[in] decl The decl to wrap
+	/// @param[in] parent Parent of the decl
 	template <typename B, typename D>
-	B create_binding( const D* decl );
+	B create_binding( const D* decl, const binding::Binding& parent );
 
 	struct PyDecl
 	{
@@ -189,7 +191,10 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 		const clang::TemplateArgument* GetTemplateArg( const std::string& type ) const;
 
 		/// @return The template map (parameter, argument)
-		const TemplateMap& GetTemplateMap() const { return m_TemplateMap; }
+		const TemplateMap& GetTemplateMap() const
+		{
+			return m_TemplateMap;
+		}
 
 		/// @brief Generates bindings and flushes
 		void Flush( FrontendAction& );

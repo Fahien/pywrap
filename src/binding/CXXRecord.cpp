@@ -4,8 +4,7 @@ namespace pywrap
 {
 namespace binding
 {
-
-CXXRecord::CXXRecord( const clang::CXXRecordDecl* rec ) : Tag{ rec }, record{ rec }
+CXXRecord::CXXRecord( const clang::CXXRecordDecl* rec, const Binding& parent ) : Tag{ rec, parent }, record{ rec }
 {
 	init();
 }

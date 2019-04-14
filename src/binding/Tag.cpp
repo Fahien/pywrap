@@ -109,8 +109,8 @@ std::string Tag::Accessors::get_decl() const
 }
 
 
-Tag::Tag( const clang::TagDecl* t )
-    : Binding{ t }
+Tag::Tag( const clang::TagDecl* t, const Binding& p )
+    : Binding{ t, &p }
     , tag{ t }
     , qualified_name{ t->getQualifiedNameAsString() }
     , destructor{ *this }
@@ -146,7 +146,7 @@ void Tag::gen_reg()
 	reg << "\tif ( PyType_Ready( &" << type_object_name << " ) < 0 )\n"
 	    << "\t{\n\t\treturn nullptr;\n\t}\n"
 	    << "\tPy_INCREF( &" << type_object_name << " );\n"
-	    << "\tPyModule_AddObject( module, \"" << get_name() << "\", "
+	    << "\tPyModule_AddObject( " << parent->get_name() << ", \"" << get_name() << "\", "
 	    << "reinterpret_cast<PyObject*>( &" << type_object_name << " ) );\n\n";
 }
 

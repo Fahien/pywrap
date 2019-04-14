@@ -12,6 +12,80 @@ namespace pywrap
 		exit( 1 );                                                                      \
 	}
 
+void Printer::process_includes( llvm::raw_fd_ostream& file, const binding::Module& module )
+{
+	// Nested modules
+	for ( auto& child : module.get_modules() )
+	{
+		process_includes( file, child );
+	}
+
+	auto process_include = [&file, this]( const binding::Binding& b ) {
+		auto incl = b.get_incl();
+		auto it   = processed_includes.find( incl );
+		if ( it == processed_includes.end() )
+		{
+			file << "#include \"" << incl << "\"\n";
+			processed_includes.emplace( incl );
+		}
+	};
+
+	for ( auto& function : module.get_functions() )
+	{
+		process_include( function );
+	}
+
+	for ( auto& en : module.get_enums() )
+	{
+		process_include( en );
+	}
+
+	for ( auto& record : module.get_records() )
+	{
+		process_include( record );
+	}
+}
+
+void Printer::process_decls( llvm::raw_fd_ostream& file, const binding::Module& module )
+{
+	// Nested modules
+	for ( auto& child : module.get_modules() )
+	{
+		process_decls( file, child );
+	}
+
+	auto print_decl = [&file]( const binding::Binding& b ) { file << b.get_decl() << '\n'; };
+
+	// Functions
+	auto& functions = module.get_functions();
+	std::for_each( std::begin( functions ), std::end( functions ), print_decl );
+
+	// Enums
+	auto& enums = module.get_enums();
+	std::for_each( std::begin( enums ), std::end( enums ), print_decl );
+
+	// Structs, unions, classes
+	auto& records = module.get_records();
+	std::for_each( std::begin( records ), std::end( records ), print_decl );
+}
+
+
+void Printer::process_wrappers( llvm::raw_fd_ostream& file, const binding::Module& module )
+{
+	// Nested modules
+	for ( auto& child : module.get_modules() )
+	{
+		process_wrappers( file, child );
+	}
+
+	auto print_wrapper_decl = [&file]( const binding::Tag& b ) { file << b.get_wrapper().get_decl() << '\n'; };
+
+	auto& enums = module.get_enums();
+	std::for_each( std::begin( enums ), std::end( enums ), print_wrapper_decl );
+
+	auto& records = module.get_records();
+	std::for_each( std::begin( records ), std::end( records ), print_wrapper_decl );
+}
 
 void Printer::printBindingsHeader( llvm::StringRef name )
 {
@@ -23,26 +97,7 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 	// Includes
 	for ( auto& pr : *modules )
 	{
-		auto process_include = [&]( const binding::Binding& b ) {
-			auto incl = b.get_incl();
-			auto it   = processed_includes.find( incl );
-			if ( it == processed_includes.end() )
-			{
-				file << "#include \"" << incl << "\"\n";
-				processed_includes.emplace( incl );
-			}
-		};
-
-		auto& module = pr.second;
-
-		auto& functions = module.get_functions();
-		std::for_each( std::begin( functions ), std::end( functions ), process_include );
-
-		auto& enums = module.get_enums();
-		std::for_each( std::begin( enums ), std::end( enums ), process_include );
-
-		auto& records = module.get_records();
-		std::for_each( std::begin( records ), std::end( records ), process_include );
+		process_includes( file, pr.second );
 	}
 
 	// Tail includes
@@ -51,23 +106,10 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 	// Extern C
 	file << "\n#ifdef __cplusplus\nextern \"C\" {\n#endif // __cplusplus\n\n";
 
-	auto print_decl = [&file]( const binding::Binding& b ) { file << b.get_decl() << '\n'; };
-
+	// Declarations
 	for ( auto& pr : *modules )
 	{
-		auto& module = pr.second;
-
-		// Functions
-		auto& functions = module.get_functions();
-		std::for_each( std::begin( functions ), std::end( functions ), print_decl );
-
-		// Enums
-		auto& enums = module.get_enums();
-		std::for_each( std::begin( enums ), std::end( enums ), print_decl );
-
-		// Structs, unions, classes
-		auto& records = module.get_records();
-		std::for_each( std::begin( records ), std::end( records ), print_decl );
+		process_decls( file, pr.second );
 	}
 
 	// End extern C
@@ -76,23 +118,34 @@ void Printer::printBindingsHeader( llvm::StringRef name )
 	// Wrappers
 	for ( auto& pr : *modules )
 	{
-		auto& module = pr.second;
-
-		auto& enums = module.get_enums();
-		for ( auto& en : enums )
-		{
-			print_decl( en.get_wrapper() );
-		}
-
-		auto& records = module.get_records();
-		for ( auto& record : records )
-		{
-			print_decl( record.get_wrapper() );
-		}
+		process_wrappers( file, pr.second );
 	}
 
 	// End guards
 	file << "\n#endif // PYSPOT_BINDINGS_H_\n";
+}
+
+void Printer::process_defs( llvm::raw_fd_ostream& file, const binding::Module& module )
+{
+	// Nested modules
+	for ( auto& child : module.get_modules() )
+	{
+		process_defs( file, child );
+	}
+
+	auto print_def = [&]( const binding::Binding& b ) { file << b.get_def() << '\n'; };
+
+	// Functions
+	auto& functions = module.get_functions();
+	std::for_each( functions.begin(), functions.end(), print_def );
+
+	// Enums
+	auto& enums = module.get_enums();
+	std::for_each( enums.begin(), enums.end(), print_def );
+
+	// CXXRecord
+	auto& records = module.get_records();
+	std::for_each( records.begin(), records.end(), print_def );
 }
 
 
@@ -105,21 +158,7 @@ void Printer::printBindingsSource( llvm::StringRef name )
 
 	for ( auto& pr : *modules )
 	{
-		auto print_def = [&]( const binding::Binding& b ) { file << b.get_def() << '\n'; };
-
-		auto& module = pr.second;
-
-		// Functions
-		auto& functions = module.get_functions();
-		std::for_each( functions.begin(), functions.end(), print_def );
-
-		// Enums
-		auto& enums = module.get_enums();
-		std::for_each( enums.begin(), enums.end(), print_def );
-
-		// CXXRecord
-		auto& records = module.get_records();
-		std::for_each( records.begin(), records.end(), print_def );
+		process_defs( file, pr.second );
 	}
 }
 
@@ -156,18 +195,28 @@ void Printer::printExtensionSource( llvm::StringRef name )
 	OPEN_FILE_STREAM( file, name );
 
 	file << "#include \"" << name.slice( 4, name.size() - 3 ).str() << "h\"\n\n"
-	     << "#include \"pyspot/Bindings.h\"\n\n";
+	     << "#include \"pyspot/Bindings.h\"\n\n"
+	     << "struct ModuleState\n{\n"
+	     << "\tPyObject* error;\n};\n\n";
+
+	std::function<void( const binding::Module& )> process_module_defs =
+	    [&file, &process_module_defs]( const binding::Module& module ) {
+		    for ( auto& child : module.get_modules() )
+		    {
+			    process_module_defs( child );
+		    }
+		    file << module.get_methods().get_def();
+		    file << module.get_def();
+	    };
 
 	for ( auto& pr : *modules )
 	{
-		auto& module = pr.second;
-		file << module.get_methods().get_def();
-		file << module.get_def();
+		process_module_defs( pr.second );
 	}
 }
 
 
-void Printer::PrintOut( const std::unordered_map<unsigned int, binding::Module>& m )
+void Printer::PrintOut( const std::unordered_map<const clang::NamespaceDecl*, binding::Module>& m )
 {
 	// TODO make member variable
 	modules = &m;

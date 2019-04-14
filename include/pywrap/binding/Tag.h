@@ -106,7 +106,7 @@ class Tag : public Binding
 
 	/// Generates bindings for a Tag (struct/union/class/enum)
 	/// @param[in] Tag to wrap
-	Tag( const clang::TagDecl* t );
+	Tag( const clang::TagDecl* t, const Binding& parent );
 
 	virtual ~Tag() = default;
 

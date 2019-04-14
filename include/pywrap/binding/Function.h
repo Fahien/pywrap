@@ -16,12 +16,15 @@ class Function : public Binding
   public:
 	/// Generated definition and declaration of Python bindings for a function
 	/// @param[in] func Function to wrap
-	Function( const clang::FunctionDecl* func );
+	Function( const clang::FunctionDecl* func, const Binding& parent );
 
 	Function( Function&& ) = default;
 
 	/// @return The clang FunctionDecl
-	const clang::FunctionDecl* get_func() const { return func; }
+	const clang::FunctionDecl* get_func() const
+	{
+		return func;
+	}
 
   protected:
 	/// Generates the signature of the binding

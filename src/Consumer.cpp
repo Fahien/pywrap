@@ -2,7 +2,8 @@
 
 namespace pywrap
 {
-Consumer::Consumer( std::unordered_map<unsigned int, binding::Module>& m, FrontendAction& frontend ) : m_Handler{ m, frontend }
+Consumer::Consumer( std::unordered_map<const clang::NamespaceDecl*, binding::Module>& m, FrontendAction& frontend )
+    : m_Handler{ m, frontend }
 {
 	// Match classes with pyspot attribute
 	auto hasPyspot = clang::ast_matchers::hasAttr( clang::attr::Annotate );

@@ -13,7 +13,7 @@ class CXXRecord : public Tag
   public:
 	/// Generates definition and declaration of Python bindings for a struct/union/class
 	/// @param[in] rec CXXRecord to wrap
-	CXXRecord( const clang::CXXRecordDecl* rec );
+	CXXRecord( const clang::CXXRecordDecl* rec, const Binding& parent );
 
   private:
 	/// CXXRecord decl

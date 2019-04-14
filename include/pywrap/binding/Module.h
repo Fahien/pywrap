@@ -45,11 +45,24 @@ class Module : public Binding
 	};
 
 	/// A module binding consist of an init function declaration
-	Module( const clang::NamespaceDecl* n );
+	Module( const clang::NamespaceDecl* n, const Binding* parent = nullptr );
 
 	Module( Module&& ) = default;
 
+	const clang::NamespaceDecl* get_handle() const
+	{
+		return ns;
+	}
+
+	/// @return The module init function definition
 	std::string get_def() const override;
+
+	/// @return The registration to its parent
+	std::string get_reg() const;
+
+	/// Adds a nested module
+	/// @param[in] m The nested module to add
+	void add( Module&& m );
 
 	/// Adds a function to this module
 	/// @param[in] f The function to add to this module
@@ -67,6 +80,18 @@ class Module : public Binding
 	const Methods& get_methods() const
 	{
 		return methods;
+	}
+
+	/// @return The nested modules within this module
+	std::vector<Module>& get_children()
+	{
+		return modules;
+	}
+
+	/// @return The nested modules within this module
+	const std::vector<Module>& get_modules() const
+	{
+		return modules;
 	}
 
 	/// @return Functions associated with the module
@@ -97,12 +122,21 @@ class Module : public Binding
 	/// @return A definition of the bindings
 	virtual void gen_def() override;
 
+	/// @return Registration of this module
+	void gen_reg();
+
   private:
 	/// Namespace decl
 	const clang::NamespaceDecl* ns;
 
 	/// Python MethodDef
 	Methods methods;
+
+	/// Module registration
+	std::stringstream reg;
+
+	/// Module functions
+	std::vector<Module> modules;
 
 	/// Module functions
 	std::vector<Function> functions;

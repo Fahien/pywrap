@@ -43,9 +43,13 @@ void Module::Methods::add( const Function& function )
 	    << function.get_name() << "\" },\n";
 }
 
-Module::Module( const clang::NamespaceDecl* n ) : Binding{ n }, ns{ n }, methods{ *this }
+Module::Module( const clang::NamespaceDecl* n, const Binding* parent ) : Binding{ n, parent }, ns{ n }, methods{ *this }
 {
 	init();
+	if ( parent )
+	{
+		gen_reg();
+	}
 }
 
 void Module::gen_py_name()
@@ -60,38 +64,96 @@ void Module::gen_sign()
 
 void Module::gen_def()
 {
-	std::stringstream exception;
-	exception << "exception";
+	std::stringstream description;
+	description << get_name() << "_description";
 
-	std::stringstream module_exception_name;
-	module_exception_name << get_name() << "_" << exception.str();
+	std::stringstream module_def;
+	module_def << get_name() << "_module_def";
 
-	def << "char description[] = \"" << get_name() << "\";\n\n"
-	    << "struct ModuleState\n{\n"
-	    << "\tPyObject* error;\n};\n\n"
-	    << "PyModuleDef module_def {\n"
+	def << "char " << description.str() << "[] = \"" << get_name() << "\";\n\n"
+	    << "PyModuleDef " << module_def.str() << "{\n"
 	    << "\tPyModuleDef_HEAD_INIT,\n"
-	    << "\tdescription,\n"
+	    << "\t" << description.str() << ",\n"
 	    << "\tnullptr,\n"
 	    << "\tsizeof( ModuleState ),\n"
 	    << "\t" << methods.get_py_name() << ",\n"
 	    << "\tnullptr,\n"
 	    << "\tnullptr,\n"
 	    << "\tnullptr,\n"
-	    << "\tnullptr,\n};\n\n"
-	    // Module init function
-	    << sign.str() << "\n{\n"
-	    << "\tauto module = PyModule_Create( &module_def );\n\n"
-	    << "\tstatic char " << module_exception_name.str() << "[] = { \"" << get_name() << ".exception\" };\n"
-	    << "\tauto " << exception.str() << " = PyErr_NewException( " << module_exception_name.str() << ", NULL, NULL );\n"
-	    << "\tPy_INCREF( " << exception.str() << " );\n"
-	    << "\tPyModule_AddObject( module, \"" << exception.str() << "\", " << exception.str() << " );\n\n";
+	    << "\tnullptr,\n};\n\n";
+
+	// Module init function if not nested
+	if ( !parent )
+	{
+		def << sign.str() << "\n{\n\tauto " << get_name() << " = PyModule_Create( &" << module_def.str() << " );\n\n";
+
+		// Exception
+		std::stringstream exception;
+		exception << "exception";
+
+		std::stringstream module_exception_name;
+		module_exception_name << get_name() << "_" << exception.str();
+
+		def << "\tstatic char " << module_exception_name.str() << "[] = { \"" << get_name() << ".exception\" };\n"
+		    << "\tauto " << exception.str() << " = PyErr_NewException( " << module_exception_name.str()
+		    << ", NULL, NULL );\n"
+		    << "\tPy_INCREF( " << exception.str() << " );\n"
+		    << "\tPyModule_AddObject( " << get_name() << ", \"" << exception.str() << "\", " << exception.str() << " );\n\n";
+	}
+
 	// will be closed by get_def
 }
 
 std::string Module::get_def() const
 {
-	return def.str() + "\treturn module;\n}\n";
+	auto ret = def.str();
+
+	// Close init function if not nested module
+	if ( !parent )
+	{
+		for ( auto& module : modules )
+		{
+			ret += module.get_reg();
+		}
+
+		ret += "\treturn " + get_name() + ";\n}\n";
+	}
+
+	return ret;
+}
+
+void Module::gen_reg()
+{
+	std::stringstream module_def;
+	module_def << get_name() << "_module_def";
+
+	reg << "\tauto " << get_name() << " = PyModule_Create( &" << module_def.str() << " );\n\n";
+
+	// Exception
+	std::stringstream exception;
+	exception << get_name() << "_exception";
+
+	std::stringstream module_exception_name;
+	module_exception_name << get_name() << "_" << exception.str();
+
+	reg << "\tstatic char " << module_exception_name.str() << "[] = { \"" << get_name() << ".exception\" };\n"
+	    << "\tauto " << exception.str() << " = PyErr_NewException( " << module_exception_name.str() << ", NULL, NULL );\n"
+	    << "\tPy_INCREF( " << exception.str() << " );\n"
+	    << "\tPyModule_AddObject( " << get_name() << ", \"" << exception.str() << "\", " << exception.str() << " );\n\n";
+
+	// Reg to parent
+	reg << "\tPyModule_AddObject( " << parent->get_name() << ", \"" << get_name() << "\", " << get_name() << " );\n\n";
+}
+
+std::string Module::get_reg() const
+{
+	assert( parent && "Module has no parent to register to" );
+	return reg.str();
+}
+
+void Module::add( Module&& m )
+{
+	modules.emplace_back( std::move( m ) );
 }
 
 void Module::add( Function&& f )
@@ -102,13 +164,27 @@ void Module::add( Function&& f )
 
 void Module::add( Enum&& e )
 {
-	def << e.get_reg();
+	if ( parent )
+	{
+		reg << e.get_reg();
+	}
+	else
+	{
+		def << e.get_reg();
+	}
 	enums.emplace_back( std::move( e ) );
 }
 
 void Module::add( CXXRecord&& r )
 {
-	def << r.get_reg();
+	if ( parent )
+	{
+		reg << r.get_reg();
+	}
+	else
+	{
+		def << r.get_reg();
+	}
 	records.emplace_back( std::move( r ) );
 }
 
