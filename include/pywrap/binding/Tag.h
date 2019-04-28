@@ -184,7 +184,7 @@ class Tag : public Binding
 	/// @return The declaration
 	std::string get_decl() const override;
 
-	/// @return The declaration
+	/// @return The definition
 	std::string get_def() const override;
 
 	/// @return The registration to the module

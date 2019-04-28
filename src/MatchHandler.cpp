@@ -7,6 +7,7 @@
 #include "pywrap/binding/Enum.h"
 #include "pywrap/binding/Function.h"
 #include "pywrap/binding/Module.h"
+#include "pywrap/binding/Specialization.h"
 
 namespace pywrap
 {
@@ -956,8 +957,28 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 		                   } );
 		if ( it == std::end( module.get_records() ) )
 		{
-			// Add the record to the module
-			module.add( create_binding<binding::CXXRecord>( record_decl, module ) );
+			// It it is a template
+			if ( record_decl->isTemplated() )
+			{
+				auto template_decl = record_decl->getDescribedClassTemplate();
+
+				// TODO handle specialization
+				for ( auto spec : template_decl->specializations() )
+				{
+					spec->startDefinition();
+					spec->completeDefinition();
+					auto record = create_binding<binding::Specialization>( spec, module );
+					record.init();
+					module.add( std::move( record ) );
+				}
+			}
+			else
+			{
+				// Add the record to the module
+				auto record = create_binding<binding::CXXRecord>( record_decl, module );
+				record.init();
+				module.add( std::move( record ) );
+			}
 		}
 	}
 }
@@ -975,6 +996,7 @@ void MatchHandler::run( const clang::ast_matchers::MatchFinder::MatchResult& res
 			{
 				// We have found a decl with our pyspot annotation
 				generate_bindings( decl );
+				return;
 			}
 		}
 	}

@@ -12,6 +12,7 @@ add_clang_library( pywrap-lib
 	src/binding/Function.cpp
 	src/binding/Enum.cpp
 	src/binding/CXXRecord.cpp
+	src/binding/Specialization.cpp
 	src/binding/Wrapper.cpp
 	src/Printer.cpp
 	src/FrontendAction.cpp
