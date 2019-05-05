@@ -1,6 +1,8 @@
 #ifndef PYWRAP_BINDING_TAG_H_
 #define PYWRAP_BINDING_TAG_H_
 
+#include <clang/AST/DeclTemplate.h>
+
 #include "pywrap/binding/Compare.h"
 #include "pywrap/binding/Destructor.h"
 #include "pywrap/binding/Init.h"
@@ -20,7 +22,8 @@ class Tag : public Binding
 	class Methods : public Binding
 	{
 	  public:
-		Methods( const Tag& t );
+		/// @param[in] t Tag these methods belong to
+		Methods( const Tag* t = nullptr );
 
 		Methods( Methods&& ) = default;
 
@@ -45,7 +48,7 @@ class Tag : public Binding
 		void gen_def() override;
 
 	  private:
-		const Tag& tag;
+		const Tag* tag;
 
 		size_t size = 1;
 	};
@@ -54,7 +57,8 @@ class Tag : public Binding
 	class Members : public Binding
 	{
 	  public:
-		Members( const Tag& t );
+		/// @param[in] t Tag these methods belong to
+		Members( const Tag* t = nullptr );
 
 		Members( Members&& ) = default;
 
@@ -72,7 +76,7 @@ class Tag : public Binding
 		void gen_def() override;
 
 	  private:
-		const Tag& tag;
+		const Tag* tag;
 
 		size_t size = 1;
 	};
@@ -81,7 +85,8 @@ class Tag : public Binding
 	class Accessors : public Binding
 	{
 	  public:
-		Accessors( const Tag& t );
+		/// @param[in] t Tag these methods belong to
+		Accessors( const Tag* t = nullptr );
 
 		Accessors( Accessors&& ) = default;
 
@@ -99,14 +104,20 @@ class Tag : public Binding
 		void gen_def() override;
 
 	  private:
-		const Tag& tag;
+		const Tag* tag;
 
 		size_t size = 1;
 	};
 
 	/// Generates bindings for a Tag (struct/union/class/enum)
-	/// @param[in] Tag to wrap
-	Tag( const clang::TagDecl* t, const Binding& parent );
+	/// @param[in] t Tag to wrap
+	/// @param[in] p Parent of the tag
+	Tag( const clang::TagDecl& t, const Binding& p );
+
+	/// Generates bindings for a template class
+	/// @param[in] t Template class
+	/// @param[in] p Parent of the tag
+	Tag( const clang::ClassTemplateDecl& t, const Binding& p );
 
 	virtual ~Tag() = default;
 
@@ -125,6 +136,12 @@ class Tag : public Binding
 	const clang::TagDecl* get_handle() const
 	{
 		return tag;
+	}
+
+	/// @return The template decl
+	const clang::ClassTemplateDecl* get_templ() const
+	{
+		return templ;
 	}
 
 	/// @return The qualified name
@@ -194,14 +211,26 @@ class Tag : public Binding
 	}
 
   protected:
+	virtual void gen_qualified_name()
+	{
+	}
+
 	virtual void gen_reg();
+
+	std::string& get_mut_qualified_name()
+	{
+		return qualified_name;
+	}
 
 	/// Module registration
 	std::stringstream reg;
 
   private:
 	/// Tag decl
-	const clang::TagDecl* tag;
+	const clang::TagDecl* tag = nullptr;
+
+	/// Template decl
+	const clang::ClassTemplateDecl* templ = nullptr;
 
 	/// Qualified name
 	std::string qualified_name;

@@ -14,8 +14,8 @@ class Compare : public Binding
 {
   public:
 	/// Creates bindings for a compare function
-	/// @param[in] t Tag which this compare belongs to
-	Compare( const Tag& t );
+	/// @param[in] t Tag which this compare belongs to (can be undefined)
+	Compare( const Tag* t = nullptr );
 
   protected:
 	void gen_name() override;
@@ -26,7 +26,7 @@ class Compare : public Binding
 	/// Generates operator equals
 	void gen_eq();
 
-	const Tag& tag;
+	const Tag* tag;
 };
 
 }  // namespace binding

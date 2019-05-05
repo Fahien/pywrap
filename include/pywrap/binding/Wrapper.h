@@ -15,7 +15,7 @@ class Wrapper : public Binding
   public:
 	/// Creates Wrapper specializations for a Tag
 	/// @param[in] t Tag to wrap
-	Wrapper( const Tag& t );
+	Wrapper( const Tag* t = nullptr );
 
   protected:
 	/// Generates the signature
@@ -38,7 +38,7 @@ class Wrapper : public Binding
 	void gen_move_constructor_def();
 
 	/// Wrapped Tag
-	const Tag& tag;
+	const Tag* tag;
 };
 
 }  // namespace binding

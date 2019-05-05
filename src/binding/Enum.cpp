@@ -4,7 +4,7 @@ namespace pywrap
 {
 namespace binding
 {
-Enum::Enum( const clang::EnumDecl* e, const Binding& parent ) : Tag{ e, parent }, enu{ e }
+Enum::Enum( const clang::EnumDecl& e, const Binding& parent ) : Tag{ e, parent }, enu{ e }
 {
 	init();
 }
@@ -13,7 +13,7 @@ void Enum::gen_reg()
 {
 	Tag::gen_reg();
 
-	for ( auto value : enu->enumerators() )
+	for ( auto value : enu.enumerators() )
 	{
 		auto name           = value->getNameAsString();
 		auto qualified_name = get_qualified_name();

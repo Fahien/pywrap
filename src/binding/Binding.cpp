@@ -33,7 +33,7 @@ void Binding::gen_py_name()
 {
 	if ( named )
 	{
-		py_name << to_pyspot_name( named->getQualifiedNameAsString() );
+		py_name << to_pyspot_name( name.str() );
 	}
 }
 

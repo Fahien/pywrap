@@ -40,6 +40,15 @@ void Printer::process_includes( llvm::raw_fd_ostream& file, const binding::Modul
 		process_include( en );
 	}
 
+	for ( auto& templ : module.get_templates() )
+	{
+		process_include( templ );
+	}
+
+	for ( auto& spec : module.get_specializations() )
+	{
+		process_include( spec );
+	}
 	for ( auto& record : module.get_records() )
 	{
 		process_include( record );
@@ -64,6 +73,14 @@ void Printer::process_decls( llvm::raw_fd_ostream& file, const binding::Module& 
 	auto& enums = module.get_enums();
 	std::for_each( std::begin( enums ), std::end( enums ), print_decl );
 
+	// Templates
+	auto& templates = module.get_templates();
+	std::for_each( std::begin( templates ), std::end( templates ), print_decl );
+
+	// Specializations
+	auto& specializations = module.get_specializations();
+	std::for_each( std::begin( specializations ), std::end( specializations ), print_decl );
+
 	// Structs, unions, classes
 	auto& records = module.get_records();
 	std::for_each( std::begin( records ), std::end( records ), print_decl );
@@ -82,6 +99,9 @@ void Printer::process_wrappers( llvm::raw_fd_ostream& file, const binding::Modul
 
 	auto& enums = module.get_enums();
 	std::for_each( std::begin( enums ), std::end( enums ), print_wrapper_decl );
+
+	auto& specializations = module.get_specializations();
+	std::for_each( std::begin( specializations ), std::end( specializations ), print_wrapper_decl );
 
 	auto& records = module.get_records();
 	std::for_each( std::begin( records ), std::end( records ), print_wrapper_decl );
@@ -142,6 +162,14 @@ void Printer::process_defs( llvm::raw_fd_ostream& file, const binding::Module& m
 	// Enums
 	auto& enums = module.get_enums();
 	std::for_each( enums.begin(), enums.end(), print_def );
+
+	// Templates
+	auto& templates = module.get_templates();
+	std::for_each( templates.begin(), templates.end(), print_def );
+
+	// Specializations
+	auto& specializations = module.get_specializations();
+	std::for_each( specializations.begin(), specializations.end(), print_def );
 
 	// CXXRecord
 	auto& records = module.get_records();

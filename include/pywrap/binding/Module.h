@@ -65,16 +65,24 @@ class Module : public Binding
 	void add( Module&& m );
 
 	/// Adds a function to this module
-	/// @param[in] f The function to add to this module
+	/// @param[in] f The function to add
 	void add( Function&& f );
 
 	/// Adds an enum to this module
-	/// @param[in] e The enum to add to this module
+	/// @param[in] e The enum to add
 	void add( Enum&& e );
 
 	/// Adds a record to this module
-	/// @param[in] r The record to add to this module
+	/// @param[in] r The record to add
 	void add( CXXRecord&& r );
+
+	/// Adds a template to this module
+	/// @param[in] t The template to add
+	void add( Template&& t );
+
+	/// Adds a template specialization to this module
+	/// @param[in] t The template specialization to add
+	void add( Specialization&& s );
 
 	/// @return The methods map for the module init function
 	const Methods& get_methods() const
@@ -112,10 +120,19 @@ class Module : public Binding
 		return records;
 	}
 
-  protected:
-	/// @return The Python name of the binding
-	virtual void gen_py_name() override;
+	/// @return Templates associated with the module
+	const std::vector<Template>& get_templates() const
+	{
+		return templates;
+	}
 
+	/// @return Specializations associated with the module
+	const std::vector<Specialization>& get_specializations() const
+	{
+		return specializations;
+	}
+
+  protected:
 	/// @return A signature of the binding
 	virtual void gen_sign() override;
 
@@ -146,6 +163,12 @@ class Module : public Binding
 
 	/// Module records
 	std::vector<CXXRecord> records;
+
+	/// Module templates
+	std::vector<Template> templates;
+
+	/// Module templates
+	std::vector<Specialization> specializations;
 };
 
 }  // namespace binding

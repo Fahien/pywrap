@@ -9,7 +9,7 @@ namespace pywrap
 {
 namespace binding
 {
-Function::Function( const clang::FunctionDecl* f, const Binding& parent ) : Binding{ f, &parent }, func{ f }
+Function::Function( const clang::FunctionDecl& f, const Binding& parent ) : Binding{ &f, &parent }, func{ f }
 {
 	init();
 }
@@ -43,17 +43,17 @@ void Function::gen_def()
 
 	// Perform the call
 	std::stringstream call;
-	call << func->getQualifiedNameAsString() << "(";
+	call << func.getQualifiedNameAsString() << "(";
 
 	// Check if there are parameters
-	auto param_count = func->parameters().size();
+	auto param_count = func.parameters().size();
 	if ( param_count > 0 )
 	{
 		for ( size_t i = 0; i < param_count; ++i )
 		{
 			// TODO Param object?
 
-			auto param = func->parameters()[i];
+			auto param = func.parameters()[i];
 
 			// We need to get the parameter by string
 			// So we create a string repr of the param
@@ -124,7 +124,7 @@ void Function::gen_def()
 	call << ")";
 
 	// If is not returning
-	if ( func->getReturnType()->isVoidType() )
+	if ( func.getReturnType()->isVoidType() )
 	{
 		def << "\t" << call.rdbuf()
 		    << ";\n"
@@ -132,7 +132,7 @@ void Function::gen_def()
 	}
 	else
 	{
-		def << "\treturn " << pywrap::to_python( func->getReturnType(), call.str() ) << ";\n";
+		def << "\treturn " << pywrap::to_python( func.getReturnType(), call.str() ) << ";\n";
 	}
 
 	// Close }

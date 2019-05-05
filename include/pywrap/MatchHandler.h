@@ -49,13 +49,13 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 
 	/// @param[in] decl Decl we want to get the path
 	/// @return A proper include path
-	std::string get_include_path( const clang::Decl* const decl );
+	std::string get_include_path( const clang::Decl& decl );
 
 	/// Generates a binding instance
 	/// @param[in] decl The decl to wrap
 	/// @param[in] parent Parent of the decl
 	template <typename B, typename D>
-	B create_binding( const D* decl, const binding::Binding& parent );
+	B create_binding( const D& decl, const binding::Binding& parent );
 
 	struct PyDecl
 	{

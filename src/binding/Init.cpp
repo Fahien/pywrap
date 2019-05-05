@@ -24,6 +24,13 @@ void Init::gen_sign()
 
 void Init::gen_def()
 {
+	// Template is trivial
+	if ( tag.get_templ() )
+	{
+		def << sign.str() << "\n{\n\treturn 0;\n};\n\n";
+		return;
+	}
+
 	def << sign.str() << "\n{\n"
 	    << "\t" << tag.get_qualified_name() << "* data = nullptr;\n"
 	    << "\tif ( self->data )\n\t{\n"
@@ -160,7 +167,12 @@ void Init::add_def( const clang::CXXConstructorDecl& constructor )
 
 std::string Init::get_def() const
 {
-	return def.str() + "\treturn -1;\n}\n\n";
+	auto ret = def.str();
+	if ( tag.get_templ() )
+	{
+		return ret;
+	}
+	return ret + "\treturn -1;\n}\n\n";
 }
 }  // namespace binding
 }  // namespace pywrap

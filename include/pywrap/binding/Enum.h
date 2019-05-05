@@ -13,7 +13,7 @@ class Enum : public Tag
   public:
 	/// Generates definition and declaration of Python bindings for an enum
 	/// @param[in] enu Enum to wrap
-	Enum( const clang::EnumDecl* enu, const Binding& parent );
+	Enum( const clang::EnumDecl& enu, const Binding& parent );
 
   protected:
 	/// Generates the registration of the bindings
@@ -21,7 +21,7 @@ class Enum : public Tag
 
   private:
 	/// Enum decl
-	const clang::EnumDecl* enu;
+	const clang::EnumDecl& enu;
 };
 }  // namespace binding
 }  // namespace pywrap

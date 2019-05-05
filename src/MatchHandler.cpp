@@ -7,7 +7,6 @@
 #include "pywrap/binding/Enum.h"
 #include "pywrap/binding/Function.h"
 #include "pywrap/binding/Module.h"
-#include "pywrap/binding/Specialization.h"
 
 namespace pywrap
 {
@@ -23,9 +22,9 @@ std::string MatchHandler::getCwd()
 	return pywrap::replace_all( aCwd.str().str(), "\\", "/" );
 }
 
-std::string MatchHandler::get_include_path( const clang::Decl* const pDecl )
+std::string MatchHandler::get_include_path( const clang::Decl& decl )
 {
-	auto location = pDecl->getLocation().printToString( m_pContext->getSourceManager() );
+	auto location = decl.getLocation().printToString( m_pContext->getSourceManager() );
 	pywrap::replace_all( location, "\\", "/" );
 
 	// Remove include directories from path
@@ -859,7 +858,7 @@ void MatchHandler::handleTag( const clang::TagDecl* pTag, TemplateMap&& tMap )
 	}
 
 	// Get include directive
-	auto fileName = get_include_path( pTag );
+	auto fileName = get_include_path( *pTag );
 	m_Frontend.AddClassInclude( "#include \"" + fileName + "\"\n" );
 
 	// Flush everything
@@ -908,7 +907,7 @@ binding::Module& MatchHandler::get_module( const clang::DeclContext* ctx )
 }
 
 template <typename B, typename D>
-B MatchHandler::create_binding( const D* decl, const binding::Binding& parent )
+B MatchHandler::create_binding( const D& decl, const binding::Binding& parent )
 {
 	B binding{ decl, parent };
 	binding.set_incl( get_include_path( decl ) );
@@ -933,7 +932,7 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 		if ( it == std::end( module.get_functions() ) )
 		{
 			// Add the function to the module
-			module.add( create_binding<binding::Function>( func_decl, module ) );
+			module.add( create_binding<binding::Function>( *func_decl, module ) );
 		}
 	}
 	// Generate enum bindings
@@ -945,7 +944,7 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 		if ( it == std::end( module.get_enums() ) )
 		{
 			// Add the enum to the module
-			module.add( create_binding<binding::Enum>( enum_decl, module ) );
+			module.add( create_binding<binding::Enum>( *enum_decl, module ) );
 		}
 	}
 	// Generate struct/union/class bindings
@@ -961,21 +960,26 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 			if ( record_decl->isTemplated() )
 			{
 				auto template_decl = record_decl->getDescribedClassTemplate();
+				auto templ         = create_binding<binding::Template>( *template_decl, module );
+				templ.init();
 
 				// TODO handle specialization
-				for ( auto spec : template_decl->specializations() )
+				for ( auto spec_decl : template_decl->specializations() )
 				{
-					spec->startDefinition();
-					spec->completeDefinition();
-					auto record = create_binding<binding::Specialization>( spec, module );
-					record.init();
-					module.add( std::move( record ) );
+					spec_decl->startDefinition();
+					spec_decl->completeDefinition();
+					auto spec = create_binding<binding::Specialization>( *spec_decl, module );
+					spec.init();
+					templ.add( spec );
+					module.add( std::move( spec ) );
 				}
+
+				module.add( std::move( templ ) );
 			}
 			else
 			{
 				// Add the record to the module
-				auto record = create_binding<binding::CXXRecord>( record_decl, module );
+				auto record = create_binding<binding::CXXRecord>( *record_decl, module );
 				record.init();
 				module.add( std::move( record ) );
 			}

@@ -23,10 +23,13 @@ void Destructor::gen_sign()
 
 void Destructor::gen_def()
 {
-	def << sign.str() << "\n{\n"
-	    << "\tif ( self->own_data )\n\t{\n"
-	    << "\t\tdelete reinterpret_cast<" << tag.get_qualified_name() << "*>( self->data );\n\t}\n"
-	    << "\tPy_TYPE( self )->tp_free( reinterpret_cast<PyObject*>( self ) );\n}\n\n";
+	def << sign.str() << "\n{\n";
+	if ( !tag.get_templ() )
+	{
+		def << "\tif ( self->own_data )\n\t{\n"
+		    << "\t\tdelete reinterpret_cast<" << tag.get_qualified_name() << "*>( self->data );\n\t}\n";
+	}
+	def << "\tPy_TYPE( self )->tp_free( reinterpret_cast<PyObject*>( self ) );\n}\n\n";
 }
 }  // namespace binding
 }  // namespace pywrap
