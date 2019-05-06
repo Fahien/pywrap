@@ -52,6 +52,11 @@ class Specialization : public CXXRecord
 
 	virtual void gen_fields() override;
 
+	const clang::ArrayRef<clang::TemplateArgument>& get_args() const
+	{
+		return args;
+	}
+
 	const clang::TemplateArgument* get_arg( const clang::FieldDecl& f ) const;
 
   private:
@@ -67,6 +72,11 @@ class Template : public Tag
 {
   public:
 	Template( const clang::ClassTemplateDecl& templ, const Binding& parent );
+
+	const std::vector<const Specialization*> get_specializations() const
+	{
+		return specializations;
+	}
 
 	/// Adds a specialization to the template
 	/// @param[in] spec Template specialization to add

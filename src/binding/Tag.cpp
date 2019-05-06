@@ -39,6 +39,12 @@ void Tag::Methods::gen_def()
 	if ( tag )
 	{
 		def << sign.str() << "[] = {\n";
+		if ( auto templ = dynamic_cast<const Template*>( tag ) )
+		{
+			size++;
+			def << "\t{ \"__class_getitem__\", " << templ->get_class_getitem().get_py_name()
+			    << ", METH_O|METH_CLASS, NULL },\n";
+		}
 	}
 }
 
@@ -220,6 +226,8 @@ Tag::Tag( const clang::ClassTemplateDecl& t, const Binding& p )
     , qualified_name{ t.getQualifiedNameAsString() }
     , destructor{ *this }
     , initializer{ *this }
+    , class_getitem{ this }
+    , methods{ this }
     , type_object{ *this }
 {
 }
@@ -233,6 +241,7 @@ void Tag::init()
 	destructor.init();
 	initializer.init();
 	compare.init();
+	class_getitem.init();
 	methods.init();
 	members.init();
 	gen_fields();
@@ -259,15 +268,15 @@ std::string Tag::get_decl() const
 {
 	// These declarations will go within extern "C"
 	// Wrapper decl should not go there
-	return destructor.get_decl() + initializer.get_decl() + compare.get_decl() + methods.get_decl() + members.get_decl() +
-	       accessors.get_decl() + type_object.get_decl();
+	return destructor.get_decl() + initializer.get_decl() + compare.get_decl() + class_getitem.get_decl() +
+	       methods.get_decl() + members.get_decl() + accessors.get_decl() + type_object.get_decl();
 }
 
 
 std::string Tag::get_def() const
 {
-	return destructor.get_def() + initializer.get_def() + compare.get_def() + methods.get_def() + members.get_def() +
-	       accessors.get_def() + type_object.get_def() + wrapper.get_def();
+	return destructor.get_def() + initializer.get_def() + compare.get_def() + class_getitem.get_def() + methods.get_def() +
+	       members.get_def() + accessors.get_def() + type_object.get_def() + wrapper.get_def();
 }
 
 

@@ -182,7 +182,8 @@ void Printer::printBindingsSource( llvm::StringRef name )
 	OPEN_FILE_STREAM( file, name );
 
 	auto include = name.slice( 4, name.size() - 3 );
-	file << "#include \"" << include.str() << "h\"\n\n#include <Python.h>\n#include <pyspot/String.h>\n\n\n";
+	file << "#include \"" << include.str()
+	     << "h\"\n\n#include <string>\n#include <Python.h>\n#include <pyspot/String.h>\n\n\n";
 
 	for ( auto& pr : *modules )
 	{

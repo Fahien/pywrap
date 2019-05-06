@@ -3,6 +3,7 @@
 
 #include <clang/AST/DeclTemplate.h>
 
+#include "pywrap/binding/ClassGetitem.h"
 #include "pywrap/binding/Compare.h"
 #include "pywrap/binding/Destructor.h"
 #include "pywrap/binding/Init.h"
@@ -32,10 +33,10 @@ class Tag : public Binding
 		void add( const Method& m );
 
 		/// @return The declaration of the methods map
-		std::string get_decl() const override;
+		virtual std::string get_decl() const override;
 
 		/// @return The definition of the methods map
-		std::string get_def() const override;
+		virtual std::string get_def() const override;
 
 	  protected:
 		/// Generates the python name of the methods map
@@ -168,6 +169,12 @@ class Tag : public Binding
 		return compare;
 	}
 
+	/// @return The __class_getitem__ func
+	const ClassGetitem& get_class_getitem() const
+	{
+		return class_getitem;
+	}
+
 	/// @return The methods map
 	const Methods& get_methods() const
 	{
@@ -226,6 +233,12 @@ class Tag : public Binding
 		return qualified_name;
 	}
 
+	/// @return The __class_getitem__ func
+	ClassGetitem& get_mut_class_getitem()
+	{
+		return class_getitem;
+	}
+
 	/// Module registration
 	std::stringstream reg;
 
@@ -247,6 +260,9 @@ class Tag : public Binding
 
 	/// Compare
 	Compare compare;
+
+	/// ClassGetitem
+	ClassGetitem class_getitem;
 
 	/// Methods
 	Methods methods;

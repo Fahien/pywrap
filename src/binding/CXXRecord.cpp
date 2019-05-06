@@ -131,6 +131,7 @@ const clang::TemplateArgument* Specialization::get_arg( const clang::FieldDecl& 
 	return nullptr;
 }
 
+
 Template::Template( const clang::ClassTemplateDecl& t, const Binding& parent ) : Tag{ t, parent }, templ{ t }
 {
 }
@@ -138,6 +139,7 @@ Template::Template( const clang::ClassTemplateDecl& t, const Binding& parent ) :
 
 void Template::add( const Specialization& spec )
 {
+	get_mut_class_getitem().add( spec );
 	specializations.push_back( &spec );
 }
 

@@ -3,6 +3,7 @@ set( LLVM_ENABLE_RTTI ON )
 
 add_clang_library( pywrap-lib
 	src/binding/Binding.cpp
+	src/binding/ClassGetitem.cpp
 	src/binding/Destructor.cpp
 	src/binding/Init.cpp
 	src/binding/Compare.cpp
