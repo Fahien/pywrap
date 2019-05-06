@@ -228,6 +228,46 @@ inline std::string to_python( const clang::QualType& type, const std::string& na
 	}
 }
 
+static std::string to_c( const clang::QualType& type, const std::string& name )
+{
+	if ( type->isBooleanType() )
+	{
+		return "static_cast<bool>( PyLong_AsLong( " + name + " ) )";
+	}
+	if ( type->isIntegerType() )
+	{
+		if ( type->isSpecificBuiltinType( clang::BuiltinType::Int ) )
+		{
+			return "static_cast<int>( PyLong_AsLong( " + name + " ) )";
+		}
+		return "PyLong_AsLong( " + name + " )";
+	}
+	if ( type->isSpecificBuiltinType( clang::BuiltinType::Float ) )
+	{
+		return "static_cast<float>( PyFloat_AsDouble( " + name + " ) )";
+	}
+	if ( type->isSpecificBuiltinType( clang::BuiltinType::Double ) )
+	{
+		return "PyFloat_AsDouble( " + name + " )";
+	}
+	if ( type->isPointerType() && type->getPointeeType()->isCharType() )
+	{
+		return "pyspot::String{ " + name + " }.ToCString()";
+	}
+	if ( type.getAsString().find( "std::string" ) != std::string::npos )
+	{
+		return "pyspot::String{ " + name + " }.ToCString()";
+	}
+	else
+	{
+		auto type_name = type.getAsString();
+		if ( type_name.substr( 0, 5 ) == "class" )
+		{
+			type_name = type_name.substr( 6, type_name.size() - 6 );
+		}
+		return "*reinterpret_cast<" + type_name + "*>( reinterpret_cast<_PyspotWrapper*>( " + name + " )->pData )";
+	}
+}
 
 inline std::string to_c( std::string type, const std::string& name )
 {

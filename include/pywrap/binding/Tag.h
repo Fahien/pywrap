@@ -199,10 +199,10 @@ class Tag : public Binding
 	}
 
 	/// @return The declaration
-	std::string get_decl() const override;
+	virtual std::string get_decl() const override;
 
 	/// @return The definition
-	std::string get_def() const override;
+	virtual std::string get_def() const override;
 
 	/// @return The registration to the module
 	std::string get_reg() const
@@ -212,6 +212,10 @@ class Tag : public Binding
 
   protected:
 	virtual void gen_qualified_name()
+	{
+	}
+
+	virtual void gen_fields()
 	{
 	}
 

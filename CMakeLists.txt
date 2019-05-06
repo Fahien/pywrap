@@ -1,4 +1,5 @@
 set( LLVM_LINK_COMPONENTS Support )
+set( LLVM_ENABLE_RTTI ON )
 
 add_clang_library( pywrap-lib
 	src/binding/Binding.cpp
@@ -7,6 +8,7 @@ add_clang_library( pywrap-lib
 	src/binding/Compare.cpp
 	src/binding/Method.cpp
 	src/binding/TypeObject.cpp
+	src/binding/Field.cpp
 	src/binding/Tag.cpp
 	src/binding/Module.cpp
 	src/binding/Function.cpp

@@ -1,6 +1,7 @@
 #include "pywrap/binding/Tag.h"
 
 #include "pywrap/Util.h"
+#include "pywrap/binding/CXXRecord.h"
 
 namespace pywrap
 {
@@ -168,8 +169,21 @@ void Tag::Accessors::gen_def()
 	if ( tag )
 	{
 		// Just definition
-		def << sign.str() << "[] = {\n"
-		    << "\t{ NULL } // sentinel\n};\n\n";
+		def << sign.str() << "[] = {\n";
+
+		if ( auto record = dynamic_cast<const CXXRecord*>( tag ) )
+		{
+			size += record->get_fields().size();
+
+			for ( auto& field : record->get_fields() )
+			{
+				def << "\t{ \"" << field.get_name() << "\", reinterpret_cast<getter>( " << field.get_getter().get_name()
+				    << " ), reinterpret_cast<setter>( " << field.get_setter().get_name() << " ), \"" << field.get_name()
+				    << "\", nullptr },\n";
+			}
+		}
+
+		def << "\t{ NULL } // sentinel\n};\n\n";
 	}
 }
 
@@ -221,6 +235,7 @@ void Tag::init()
 	compare.init();
 	methods.init();
 	members.init();
+	gen_fields();
 	accessors.init();
 	type_object.init();
 	wrapper.init();

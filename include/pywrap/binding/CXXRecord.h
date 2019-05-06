@@ -1,6 +1,7 @@
 #ifndef PYWRAP_BINDING_CXXRECORD_H_
 #define PYWRAP_BINDING_CXXRECORD_H_
 
+#include "pywrap/binding/Field.h"
 #include "pywrap/binding/Tag.h"
 
 namespace pywrap
@@ -15,9 +16,26 @@ class CXXRecord : public Tag
 	/// @param[in] rec CXXRecord to wrap
 	CXXRecord( const clang::CXXRecordDecl& rec, const Binding& parent );
 
+	virtual void gen_fields() override;
+
+	const std::vector<Field>& get_fields() const
+	{
+		return fields;
+	}
+
+	void add_field( Field&& f );
+
+	virtual void init() override;
+
+	virtual std::string get_decl() const override;
+
+	virtual std::string get_def() const override;
+
   private:
 	/// CXXRecord decl
 	const clang::CXXRecordDecl& record;
+
+	std::vector<Field> fields;
 };
 
 
@@ -32,8 +50,14 @@ class Specialization : public CXXRecord
 
 	virtual void gen_qualified_name() override;
 
+	virtual void gen_fields() override;
+
+	const clang::TemplateArgument* get_arg( const clang::FieldDecl& f ) const;
+
   private:
 	const clang::ClassTemplateSpecializationDecl& spec;
+
+	clang::ArrayRef<clang::TemplateArgument> args;
 
 	std::stringstream template_args;
 };
