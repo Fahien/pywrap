@@ -1,12 +1,14 @@
 # Pywrap
 
-Pywrap is a simple tool which implements an LLVM FrontendAction to create [Pyspot](https://github.com/Fahien/pyspot)-based Python bindings for C++ classes, structs, and enums marked with a `[[pyspot::export]]` attribute.
+Pywrap is a simple tool which implements an LLVM FrontendAction to create [Pyspot](https://github.com/Fahien/pyspot)-based Python bindings for C++ classes, structs, and enums marked with `__attribute__( ( annotate( "pyspot" ) ) )`.
 
 ```cpp
-enum class [[pyspot::export]] Color { R, G, B };
+#define PYSPOT_EXPORT __attribute__( ( annotate( "pyspot" ) ) )
+
+enum class PYSPOT_EXPORT Color { R, G, B };
 
 // Will export the public interface only
-class [[pyspot::export]] Test { /* ... */ };
+class PYSPOT_EXPORT Test { /* ... */ };
 ```
 
 The following guide is very much based on [Clang's](https://clang.llvm.org/get_started.html).
@@ -18,23 +20,23 @@ In order to build Pywrap, you need to fulfill [the requirements](https://llvm.or
  - [Python](http://www.python.org/download), because;
  - [CMake](http://www.cmake.org/download), for building.
 
-Then you can proceed to clone Pyspot's [LLVM](https://github.com/Fahien/llvm), [clang](https://github.com/Fahien/clang), [clang-tools-extra](https://github.com/Fahien/clang-tools-extra), and pywrap in the right directories.
+Then you can proceed to clone [LLVM](https://github.com/llvm-mirror/llvm), [clang](https://github.com/llvm-mirror/clang), custom [clang-tools-extra](https://github.com/Fahien/clang-tools-extra), and pywrap in the right directories.
 
 ```bash
 # LLVM
-git clone -b release_70 https://github.com/fahien/llvm.git llvm
+git clone -b release_80 https://github.com/llvm-mirror/llvm.git llvm
 
 # Clang
 cd llvm/tools
-git clone -b release_70 https://github.com/Fahien/clang.git clang
+git clone -b release_80 https://github.com/llvm-mirror/clang.git clang
 
 # Clang extra
 cd clang/tools
-git clone -b release_70 https://github.com/Fahien/clang-tools-extra.git extra
+git clone -b release_80 https://github.com/Fahien/clang-tools-extra.git extra
 
 # Pywrap
 cd extra
-git clone -b release_70 https://github.com/Fahien/pywrap.git pywrap
+git clone -b release_80 https://github.com/Fahien/pywrap.git pywrap
 
 # Go back
 cd ../../../../..
@@ -42,9 +44,9 @@ cd ../../../../..
 
 ## Build
 
-Generate the project with cmake: `cmake -H. -Bbuild -DCMAKE_BUILD_TYPE=Release`
+Generate the project with cmake: `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_RTTI=ON`
 
-Compile it: `cmake --build build --target pywrap --config Release`
+Compile it: `cmake --build build --config Release`
 
 Run the executable: `build\bin\pywrap.exe`
 
@@ -65,4 +67,4 @@ This will generate two headers and two source files under the current working di
 
 ## License
 
-Mit License © 2018 [Antonio Caggiano](https://twitter.com/Fahien)
+Mit License © 2018-2019 [Antonio Caggiano](https://twitter.com/Fahien)
