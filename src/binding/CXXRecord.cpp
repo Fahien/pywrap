@@ -86,6 +86,7 @@ void Specialization::gen_template_args()
 	template_args << ">";
 }
 
+
 void Specialization::gen_name()
 {
 	CXXRecord::gen_name();
@@ -95,7 +96,8 @@ void Specialization::gen_name()
 
 void Specialization::gen_qualified_name()
 {
-	get_mut_qualified_name() += template_args.str();
+	CXXRecord::gen_qualified_name();
+	get_mut_qualified_name() << template_args.str();
 }
 
 

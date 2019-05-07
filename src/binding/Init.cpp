@@ -60,7 +60,7 @@ void Init::gen_def()
 		{
 			if ( auto constructor = clang::dyn_cast<clang::CXXConstructorDecl>( method ) )
 			{
-				if ( !constructor->isDefaultConstructor() && !constructor->isCopyOrMoveConstructor() )
+				if ( !constructor->isCopyOrMoveConstructor() )
 				{
 					add_def( *constructor );
 				}
@@ -98,15 +98,12 @@ void Init::add_def( const clang::CXXConstructorDecl& constructor )
 
 	for ( auto param : constructor.parameters() )
 	{
-		if ( args_count > 0 )
-		{
-			--args_count;
-		}
-		else if ( args_count == 0 )
+		if ( args_count == 0 )
 		{
 			// Separator
 			fmt_def << "|";
 		}
+		--args_count;
 
 		// Parser for fmt
 		auto qual_type = param->getType();
@@ -126,6 +123,7 @@ void Init::add_def( const clang::CXXConstructorDecl& constructor )
 		else
 		{
 			def << "PyObject* ";
+			call_args << pywrap::to_c( param->getType(), param_name ) << ", ";
 		}
 		def << param_name << " {};\n";
 

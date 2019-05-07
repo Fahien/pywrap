@@ -207,7 +207,6 @@ std::string Tag::Accessors::get_decl() const
 Tag::Tag( const clang::TagDecl& t, const Binding& p )
     : Binding{ &t, &p }
     , tag{ &t }
-    , qualified_name{ t.getQualifiedNameAsString() }
     , destructor{ *this }
     , initializer{ *this }
     , compare{ this }
@@ -223,7 +222,6 @@ Tag::Tag( const clang::TagDecl& t, const Binding& p )
 Tag::Tag( const clang::ClassTemplateDecl& t, const Binding& p )
     : Binding{ &t, &p }
     , templ{ &t }
-    , qualified_name{ t.getQualifiedNameAsString() }
     , destructor{ *this }
     , initializer{ *this }
     , class_getitem{ this }
@@ -237,7 +235,6 @@ void Tag::init()
 {
 	// Should be initialized after construction
 	Binding::init();
-	gen_qualified_name();
 	destructor.init();
 	initializer.init();
 	compare.init();

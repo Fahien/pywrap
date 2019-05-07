@@ -145,12 +145,6 @@ class Tag : public Binding
 		return templ;
 	}
 
-	/// @return The qualified name
-	const std::string& get_qualified_name() const
-	{
-		return qualified_name;
-	}
-
 	/// @return The destructor
 	const Destructor& get_destructor() const
 	{
@@ -218,20 +212,11 @@ class Tag : public Binding
 	}
 
   protected:
-	virtual void gen_qualified_name()
-	{
-	}
-
 	virtual void gen_fields()
 	{
 	}
 
 	virtual void gen_reg();
-
-	std::string& get_mut_qualified_name()
-	{
-		return qualified_name;
-	}
 
 	/// @return The __class_getitem__ func
 	ClassGetitem& get_mut_class_getitem()
@@ -248,9 +233,6 @@ class Tag : public Binding
 
 	/// Template decl
 	const clang::ClassTemplateDecl* templ = nullptr;
-
-	/// Qualified name
-	std::string qualified_name;
 
 	/// Destructor
 	Destructor destructor;

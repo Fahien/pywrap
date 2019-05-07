@@ -41,6 +41,12 @@ class Binding
 		return name.str();
 	}
 
+	/// @return The qualified name
+	std::string get_qualified_name() const
+	{
+		return qualified_name.str();
+	}
+
 	/// @return The python name
 	std::string get_py_name() const
 	{
@@ -75,6 +81,9 @@ class Binding
 	/// Generates the name of the binding
 	virtual void gen_name();
 
+	/// Generates the name of the binding
+	virtual void gen_qualified_name();
+
 	/// Generates the Python name of the binding
 	virtual void gen_py_name();
 
@@ -86,6 +95,12 @@ class Binding
 
 	/// Generates the definition of the bindings
 	virtual void gen_def(){};
+
+	/// @return A mutable reference to the qualified name
+	std::stringstream& get_mut_qualified_name()
+	{
+		return qualified_name;
+	}
 
 	/// Named decl
 	const clang::NamedDecl* named{ nullptr };
@@ -101,6 +116,9 @@ class Binding
 
 	/// Name
 	std::stringstream name;
+
+	/// Qualified name
+	std::stringstream qualified_name;
 
 	/// Python name
 	std::stringstream py_name;
