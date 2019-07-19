@@ -131,7 +131,7 @@ MatchHandler::PyDestructor::PyDestructor( const PyTag& pyTag )
 	name        = pyTag.pyName + "_Dealloc";
 	declaration = "void " + name + "( _PyspotWrapper* pSelf );\n\n";
 	definition  = "void " + name + "( _PyspotWrapper* pSelf )\n{\n" + "\tif ( pSelf->bOwnData )\n\t{\n" +
-	             "\t\tdelete reinterpret_cast<" + pyTag.qualifiedName + "*>( pSelf->pData );\n\t}\n" +
+	             "\t\tdelete reinterpret_cast<" + pyTag.qualifiedName + "*>( pSelf->data );\n\t}\n" +
 	             "\tPy_TYPE( pSelf )->tp_free( reinterpret_cast<PyObject*>( "
 	             "pSelf ) );\n}\n\n";
 }
@@ -155,7 +155,7 @@ MatchHandler::PyGetter::PyGetter( PyField& field )
 	auto sign        = "PyObject* " + decl.name + "( _PyspotWrapper* pSelf, void* pClosure )";
 	decl.declaration = sign + ";\n\n";
 	decl.definition  = sign + "\n{\n\tauto pData = reinterpret_cast<" + field.owner.qualifiedName +
-	                  "*>( pSelf->pData );\n\treturn " +
+	                  "*>( pSelf->data );\n\treturn " +
 	                  pywrap::to_python( field.pField->getType(), "pData->" + field.name, field.owner.GetTemplateMap(),
 	                                     *field.owner.pContext ) +
 	                  ";\n}\n\n";
@@ -179,7 +179,7 @@ MatchHandler::PySetter::PySetter( PyField& field )
 		    field.name + " expects a string\" );\n\t\treturn -1;\n\t}\n";
 	}
 
-	decl.definition += "\n\tauto pData = reinterpret_cast<" + field.owner.qualifiedName + "*>( pSelf->pData );\n\tpData->" +
+	decl.definition += "\n\tauto pData = reinterpret_cast<" + field.owner.qualifiedName + "*>( pSelf->data );\n\tpData->" +
 	                   field.name + " = " + pywrap::to_c( field.type, "pValue" ) + ";\n\treturn 0;\n}\n\n";
 }
 
@@ -217,9 +217,9 @@ MatchHandler::PyInit::PyInit( const PyTag& pyTag ) : owner{ pyTag }
 	auto sign   = "int " + name + "( _PyspotWrapper* pSelf, PyObject* pArgs, PyObject* pKwds )";
 	declaration = sign + ";\n\n";
 	definition  = sign + "\n{\n\t" + pyTag.qualifiedName +
-	             "* pData { nullptr };\n\n\tif ( pSelf->pData )\n\t{\n\t\tpData "
+	             "* pData { nullptr };\n\n\tif ( pSelf->data )\n\t{\n\t\tpData "
 	             "= reinterpret_cast<" +
-	             pyTag.qualifiedName + "*>( pSelf->pData );\n\t\treturn 0;\n\t}\n\n";
+	             pyTag.qualifiedName + "*>( pSelf->data );\n\t\treturn 0;\n\t}\n\n";
 
 	definition +=
 	    "\tauto argsSize = PyTuple_Size( pArgs );\n"
@@ -233,7 +233,7 @@ MatchHandler::PyInit::PyInit( const PyTag& pyTag ) : owner{ pyTag }
 		    "\t{\n\t\tpData = new " +
 		    pyTag.qualifiedName +
 		    "{};\n"
-		    "\t\tpSelf->pData = pData;\n"
+		    "\t\tpSelf->data = pData;\n"
 		    "\t\tpSelf->bOwnData = true;\n"
 		    "\t\treturn 0;\n\t}\n\n";
 	}
@@ -378,7 +378,7 @@ void MatchHandler::PyInit::Add( const clang::CXXConstructorDecl* pConstructor )
 	}
 
 	definition += "\t\t\tpData = new " + owner.qualifiedName + "{ " + constructorArgList +
-	              " };\n\t\t\tpSelf->pData = pData;\n\t\t\tpSelf->bOwnData = "
+	              " };\n\t\t\tpSelf->data = pData;\n\t\t\tpSelf->bOwnData = "
 	              "true;\n\t\t\treturn 0;\n\t\t}\n\t}\n";
 }
 
@@ -410,10 +410,10 @@ void MatchHandler::PyCompare::Add( const clang::OverloadedOperatorKind op )
 		    "\tif ( op == Py_EQ )\n\t{\n"
 		    "\t\tauto& lhs = *reinterpret_cast<" +
 		    owner.qualifiedName +
-		    "*>( pLhs->pData );\n"
+		    "*>( pLhs->data );\n"
 		    "\t\tauto& rhs = *reinterpret_cast<" +
 		    owner.qualifiedName +
-		    "*>( pRhs->pData );\n\n"
+		    "*>( pRhs->data );\n\n"
 		    "\t\tif ( lhs == rhs )\n\t\t{\n"
 		    "\t\t\tPy_INCREF( Py_True );\n\t\t\treturn Py_True;\n\t\t}\n"
 		    "\t\telse\n\t\t{\n"
@@ -536,7 +536,7 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 			}
 			// Pointer to data
 			methodDecl.definition +=
-			    "\tauto " + dataName + " = reinterpret_cast<" + paramType + "*>( " + paramName + "->pData );\n";
+			    "\tauto " + dataName + " = reinterpret_cast<" + paramType + "*>( " + paramName + "->data );\n";
 			callArglist += "*" + dataName + ", ";
 		}
 		arglist += ", &" + paramName;
@@ -557,7 +557,7 @@ MatchHandler::PyMethod::PyMethod( const PyTag& pyTag, const clang::CXXMethodDecl
 	                         " ) )\n\t{\n\t\tPy_INCREF( Py_None );\n\t\treturn Py_None;\n\t}\n\n";
 
 	// Get pData
-	methodDecl.definition += "\tauto pData = reinterpret_cast<" + pyTag.qualifiedName + "*>( pSelf->pData );\n";
+	methodDecl.definition += "\tauto pData = reinterpret_cast<" + pyTag.qualifiedName + "*>( pSelf->data );\n";
 
 	auto call = "pData->" + name + "( " + callArglist + " )";
 	// Check return type
@@ -701,7 +701,7 @@ MatchHandler::WrapperConstructors::WrapperConstructors( const PyTag& pyTag, cons
 	pointer.name        = constructorName + "* pV )";
 	pointer.declaration = pointer.name + ";\n\n";
 	pointer.definition  = pointer.name + "\n" + pyObjectReady + ",\tpPayload { pV }\n{\n" + getWrapper +
-	                     "\tpWrapper->pData = pPayload;\n}\n\n";
+	                     "\tpWrapper->data = pPayload;\n}\n\n";
 
 	auto pEnum  = pyTag.AsEnum();
 	auto pClass = pyTag.AsClass();
@@ -712,7 +712,7 @@ MatchHandler::WrapperConstructors::WrapperConstructors( const PyTag& pyTag, cons
 		copy.name        = constructorName + "& v )";
 		copy.declaration = copy.name + ";\n\n";
 		copy.definition  = copy.name + "\n" + pyObjectReady + ",\tpPayload { new " + pyTag.qualifiedName + "{ v } }\n{\n" +
-		                  getWrapper + "\tpWrapper->pData = pPayload;\n\tpWrapper->bOwnData = true;\n}\n\n";
+		                  getWrapper + "\tpWrapper->data = pPayload;\n\tpWrapper->bOwnData = true;\n}\n\n";
 	}
 
 	// Move constructor
@@ -722,7 +722,7 @@ MatchHandler::WrapperConstructors::WrapperConstructors( const PyTag& pyTag, cons
 		move.declaration = move.name + ";\n\n";
 		move.definition  = move.name + "\n" + pyObjectReady + ",\tpPayload { new " + pyTag.qualifiedName +
 		                  "{ std::move( v ) } }\n{\n" + getWrapper +
-		                  "\tpWrapper->pData = pPayload;\n\tpWrapper->bOwnData = true;\n}\n\n";
+		                  "\tpWrapper->data = pPayload;\n\tpWrapper->bOwnData = true;\n}\n\n";
 	}
 }
 
@@ -869,15 +869,15 @@ void MatchHandler::handleTag( const clang::TagDecl* pTag, TemplateMap&& tMap )
 binding::Module& MatchHandler::get_module( const clang::DeclContext* ctx )
 {
 	assert( ctx && "Context not valid" );
-	auto namespace_decl = clang::dyn_cast<clang::NamespaceDecl>( ctx );
+	auto named_decl = clang::dyn_cast<clang::NamedDecl>( ctx );
 
-	auto id = namespace_decl->getQualifiedNameAsString();
+	auto id = named_decl->getQualifiedNameAsString();
 
-	// Nested namespace
-	auto namespace_context = namespace_decl->getDeclContext();
-	if ( namespace_context->isNamespace() )
+	// Nested thing
+	auto named_context = named_decl->getDeclContext();
+	if (!named_context->isTranslationUnit())
 	{
-		auto& parent = get_module( namespace_context );
+		auto& parent = get_module( named_context );
 		// Find the module within the children of the parent
 		auto& children = parent.get_children();
 		auto  it       = std::find_if( std::begin( children ), std::end( children ),
@@ -885,7 +885,7 @@ binding::Module& MatchHandler::get_module( const clang::DeclContext* ctx )
 		if ( it == std::end( children ) )
 		{
 			// Create if not found
-			parent.add( binding::Module{ namespace_decl, &parent } );
+			parent.add( binding::Module{ *named_decl, &parent } );
 			return children.back();
 		}
 		// Return the module
@@ -897,7 +897,7 @@ binding::Module& MatchHandler::get_module( const clang::DeclContext* ctx )
 	if ( it == modules.end() )
 	{
 		// Create it the first time
-		auto pr = modules.emplace( id, binding::Module{ namespace_decl } );
+		auto pr = modules.emplace( id, binding::Module{ *named_decl } );
 		if ( pr.second )  // success
 		{
 			it = pr.first;

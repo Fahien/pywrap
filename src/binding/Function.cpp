@@ -105,7 +105,7 @@ void Function::gen_def()
 					// Wrapper
 					def << "_PyspotWrapper* " << name << ";\n";
 					// Pointer to data
-					def << "\tauto " + name + " = reinterpret_cast<" + type + "*>( " + name + "->pData );\n";
+					def << "\tauto " + name + " = reinterpret_cast<" + type + "*>( " + name + "->data );\n";
 					call_arg_list << "*" + name + ", ";
 				}
 			}
@@ -132,7 +132,8 @@ void Function::gen_def()
 	}
 	else
 	{
-		def << "\treturn " << pywrap::to_python( func.getReturnType(), call.str() ) << ";\n";
+		def << "\tauto ret = " << pywrap::to_python( func.getReturnType(), call.str() ) << ";\n";
+		def << "\treturn ret;\n";
 	}
 
 	// Close }

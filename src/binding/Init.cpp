@@ -7,14 +7,14 @@ namespace pywrap
 {
 namespace binding
 {
-Init::Init( const Tag& t ) : tag{ t }
+Init::Init( const Tag& t ) : tag{ &t }
 {
 	// Initialized by the tag
 }
 
 void Init::gen_name()
 {
-	name << tag.get_py_name() << "_init";
+	name << tag->get_py_name() << "_init";
 }
 
 void Init::gen_sign()
@@ -25,29 +25,29 @@ void Init::gen_sign()
 void Init::gen_def()
 {
 	// Template is trivial
-	if ( tag.get_templ() )
+	if ( tag->get_templ() )
 	{
 		def << sign.str() << "\n{\n\treturn 0;\n};\n\n";
 		return;
 	}
 
 	def << sign.str() << "\n{\n"
-	    << "\t" << tag.get_qualified_name() << "* data = nullptr;\n"
+	    << "\t" << tag->get_qualified_name() << "* data = nullptr;\n"
 	    << "\tif ( self->data )\n\t{\n"
-	    << "\t\tdata = reinterpret_cast<" << tag.get_qualified_name() << "*>( self->data );\n"
+	    << "\t\tdata = reinterpret_cast<" << tag->get_qualified_name() << "*>( self->data );\n"
 	    << "\t\treturn 0;\n\t}\n\n";
 
 	// Get args and kwds size
 	def << "\tauto args_size = args ? PyTuple_Size( args ) : 0;\n"
 	       "\tauto kwds_size = kwds ? PyDict_Size( kwds ) : 0;\n\n";
 
-	auto record = clang::dyn_cast<clang::CXXRecordDecl>( tag.get_handle() );
+	auto record = clang::dyn_cast<clang::CXXRecordDecl>( tag->get_handle() );
 
 	// Default constructor
 	if ( !record || record->hasDefaultConstructor() )
 	{
 		def << "\tif ( args_size == 0 && kwds_size == 0 )\n"
-		    << "\t{\n\t\tdata = new " << tag.get_qualified_name() << "{};\n"
+		    << "\t{\n\t\tdata = new " << tag->get_qualified_name() << "{};\n"
 		    << "\t\tself->data = data;\n"
 		       "\t\tself->own_data = true;\n"
 		       "\t\treturn 0;\n\t}\n\n";
@@ -154,7 +154,7 @@ void Init::add_def( const clang::CXXConstructorDecl& constructor )
 	    << " ) )\n\t\t{\n";
 
 	// Call constructor
-	def << "\t\t\tdata = new " << tag.get_qualified_name() << "{ " << call_args_str << " };\n"
+	def << "\t\t\tdata = new " << tag->get_qualified_name() << "{ " << call_args_str << " };\n"
 	    << "\t\t\tself->data = data;\n\t\t\tself->own_data = true;\n";
 
 	def << "\t\t\treturn 0;\n\t\t}\n";
@@ -166,7 +166,7 @@ void Init::add_def( const clang::CXXConstructorDecl& constructor )
 std::string Init::get_def() const
 {
 	auto ret = def.str();
-	if ( tag.get_templ() )
+	if ( tag->get_templ() )
 	{
 		return ret;
 	}

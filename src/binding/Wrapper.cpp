@@ -1,6 +1,6 @@
 #include "pywrap/binding/Wrapper.h"
 
-#include "pywrap/binding/Tag.h"
+#include "pywrap/binding/CXXRecord.h"
 
 
 namespace pywrap
@@ -108,8 +108,23 @@ void Wrapper::gen_move_constructor_def()
 void Wrapper::gen_def()
 {
 	gen_pointer_constructor_def();
-	gen_copy_constructor_def();
-	gen_move_constructor_def();
+
+	if ( auto record = dynamic_cast<const CXXRecord*>( tag ) )
+	{
+		if ( record->get_record().hasSimpleCopyConstructor() )
+		{
+			gen_copy_constructor_def();
+		}
+		if ( record->get_record().hasSimpleMoveConstructor() )
+		{
+			gen_move_constructor_def();
+		}
+	}
+	else
+	{
+		gen_copy_constructor_def();
+		gen_move_constructor_def();
+	}
 }
 
 

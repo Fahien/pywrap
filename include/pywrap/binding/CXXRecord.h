@@ -16,7 +16,13 @@ class CXXRecord : public Tag
 	/// @param[in] rec CXXRecord to wrap
 	CXXRecord( const clang::CXXRecordDecl& rec, const Binding& parent );
 
+	virtual ~CXXRecord() = default;
+
+	CXXRecord( CXXRecord&& ) = default;
+
 	virtual void gen_fields() override;
+
+	const clang::CXXRecordDecl& get_record() const { return record; }
 
 	const std::vector<Field>& get_fields() const
 	{
@@ -43,6 +49,10 @@ class Specialization : public CXXRecord
 {
   public:
 	Specialization( const clang::ClassTemplateSpecializationDecl& spec, const Binding& parent );
+
+	virtual ~Specialization() = default;
+
+	Specialization( Specialization&& ) = default;
 
 	void gen_template_args();
 
@@ -72,6 +82,10 @@ class Template : public Tag
 {
   public:
 	Template( const clang::ClassTemplateDecl& templ, const Binding& parent );
+
+	virtual ~Template() = default;
+
+	Template( Template&& ) = default;
 
 	const std::vector<const Specialization*> get_specializations() const
 	{

@@ -2,6 +2,7 @@ set( LLVM_LINK_COMPONENTS Support )
 set( LLVM_ENABLE_RTTI ON )
 
 add_clang_library( pywrap-lib
+	src/Util.cpp
 	src/binding/Binding.cpp
 	src/binding/ClassGetitem.cpp
 	src/binding/Destructor.cpp

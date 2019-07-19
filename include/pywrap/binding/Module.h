@@ -45,11 +45,11 @@ class Module : public Binding
 	};
 
 	/// A module binding consist of an init function declaration
-	Module( const clang::NamespaceDecl* n, const Binding* parent = nullptr );
+	Module( const clang::NamedDecl& n, const Binding* parent = nullptr );
 
 	Module( Module&& ) = default;
 
-	const clang::NamespaceDecl* get_handle() const
+	const clang::NamedDecl* get_handle() const
 	{
 		return ns;
 	}
@@ -143,8 +143,8 @@ class Module : public Binding
 	void gen_reg();
 
   private:
-	/// Namespace decl
-	const clang::NamespaceDecl* ns;
+	/// Named decl
+	const clang::NamedDecl* ns;
 
 	/// Python MethodDef
 	Methods methods;

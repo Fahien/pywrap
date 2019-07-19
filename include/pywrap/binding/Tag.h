@@ -110,6 +110,10 @@ class Tag : public Binding
 		size_t size = 1;
 	};
 
+	virtual ~Tag() = default;
+
+	Tag( Tag&& );
+
 	/// Generates bindings for a Tag (struct/union/class/enum)
 	/// @param[in] t Tag to wrap
 	/// @param[in] p Parent of the tag
@@ -119,10 +123,6 @@ class Tag : public Binding
 	/// @param[in] t Template class
 	/// @param[in] p Parent of the tag
 	Tag( const clang::ClassTemplateDecl& t, const Binding& p );
-
-	virtual ~Tag() = default;
-
-	Tag( Tag&& ) = default;
 
 	/// Initialized the tag
 	void init() override;

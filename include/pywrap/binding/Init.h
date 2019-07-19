@@ -31,7 +31,9 @@ class Init : public Binding
 	/// @param[in] constructor Constructor to support
 	void add_def( const clang::CXXConstructorDecl& constructor );
 
-	const Tag& tag;
+	const Tag* tag = nullptr;
+
+	friend class Tag;
 };
 }  // namespace binding
 }  // namespace pywrap

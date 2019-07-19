@@ -204,6 +204,25 @@ std::string Tag::Accessors::get_decl() const
 }
 
 
+Tag::Tag( Tag&& o )
+    : Binding{ std::move( o ) }
+    , reg{ std::move( o.reg ) }
+    , tag{ o.tag }
+    , templ{ o.templ }
+    , destructor{ std::move( o.destructor ) }
+    , initializer{ std::move( o.initializer ) }
+    , compare{ std::move( o.compare ) }
+    , class_getitem{ std::move( o.class_getitem ) }
+    , methods{ std::move( o.methods ) }
+    , members{ std::move( o.members ) }
+    , accessors{ std::move( o.accessors ) }
+    , type_object{ std::move( o.type_object ) }
+    , wrapper{ std::move( o.wrapper ) }
+{
+	initializer.tag = this;
+}
+
+
 Tag::Tag( const clang::TagDecl& t, const Binding& p )
     : Binding{ &t, &p }
     , tag{ &t }
@@ -229,7 +248,6 @@ Tag::Tag( const clang::ClassTemplateDecl& t, const Binding& p )
     , type_object{ *this }
 {
 }
-
 
 void Tag::init()
 {

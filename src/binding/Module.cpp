@@ -49,7 +49,7 @@ void Module::Methods::add( const Function& function )
 }
 
 
-Module::Module( const clang::NamespaceDecl* n, const Binding* parent ) : Binding{ n, parent }, ns{ n }, methods{ *this }
+Module::Module( const clang::NamedDecl& n, const Binding* parent ) : Binding{ &n, parent }, ns{ &n }, methods{ *this }
 {
 	init();
 	if ( parent )

@@ -21,7 +21,8 @@ void Getter::gen_def()
 {
 	def << sign.str() << "\n{\n"
 	    << "\tauto data = reinterpret_cast<" << field->get_tag().get_qualified_name() << "*>( self->data );\n"
-	    << "\treturn " << to_python( field->get_type(), "data->" + field->get_name() ) << ";\n"
+	    << "\tauto ret = " << to_python( field->get_type(), "data->" + field->get_name() ) << ";\n"
+	    << "\treturn ret;\n"
 	    << "}\n\n";
 }
 
