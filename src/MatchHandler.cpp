@@ -700,8 +700,8 @@ MatchHandler::WrapperConstructors::WrapperConstructors( const PyTag& pyTag, cons
 	// Pointer constructor
 	pointer.name        = constructorName + "* pV )";
 	pointer.declaration = pointer.name + ";\n\n";
-	pointer.definition  = pointer.name + "\n" + pyObjectReady + ",\tpPayload { pV }\n{\n" + getWrapper +
-	                     "\tpWrapper->data = pPayload;\n}\n\n";
+	pointer.definition =
+	    pointer.name + "\n" + pyObjectReady + ",\tpPayload { pV }\n{\n" + getWrapper + "\tpWrapper->data = pPayload;\n}\n\n";
 
 	auto pEnum  = pyTag.AsEnum();
 	auto pClass = pyTag.AsClass();
@@ -875,7 +875,7 @@ binding::Module& MatchHandler::get_module( const clang::DeclContext* ctx )
 
 	// Nested thing
 	auto named_context = named_decl->getDeclContext();
-	if (!named_context->isTranslationUnit())
+	if ( !named_context->isTranslationUnit() )
 	{
 		auto& parent = get_module( named_context );
 		// Find the module within the children of the parent
@@ -981,7 +981,27 @@ void MatchHandler::generate_bindings( const clang::Decl* decl )
 				// Add the record to the module
 				auto record = create_binding<binding::CXXRecord>( *record_decl, module );
 				record.init();
+
 				module.add( std::move( record ) );
+
+				// Generate bindings for fields with custom types if not yet generated
+				auto& rec = module.get_records().back();
+				for ( auto& field : rec.get_fields() )
+				{
+					auto type = field.get_type();
+					auto name = type.getAsString();
+
+					// Skip std types
+					if ( name.find("std::") != std::string::npos )
+					{
+						continue;
+					}
+
+					if ( auto tag = field.get_type()->getAsTagDecl() )
+					{
+						generate_bindings( tag );
+					}
+				}
 			}
 		}
 	}

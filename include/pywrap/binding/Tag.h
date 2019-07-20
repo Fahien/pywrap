@@ -105,8 +105,9 @@ class Tag : public Binding
 		void gen_def() override;
 
 	  private:
-		const Tag* tag;
+		const Tag* tag = nullptr;
 
+		/// Used for generated array size
 		size_t size = 1;
 	};
 

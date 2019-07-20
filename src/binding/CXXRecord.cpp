@@ -13,8 +13,15 @@ void CXXRecord::gen_fields()
 {
 	for ( auto field : record.fields() )
 	{
+		// Add only public fields
 		auto is_public = ( field->getAccess() == clang::AS_public );
 		if ( !is_public )
+		{
+			continue;
+		}
+
+		// Do not add void*
+		if ( field->getType()->isVoidPointerType() )
 		{
 			continue;
 		}
