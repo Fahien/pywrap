@@ -2,20 +2,19 @@
 
 namespace pywrap
 {
-Consumer::Consumer( std::unordered_map<std::string, binding::Module>& m, FrontendAction& frontend )
-    : m_Handler{ m, frontend }
+Consumer::Consumer( std::unordered_map<std::string, binding::Module>& m, FrontendAction& frontend ) : handler{ m, frontend }
 {
 	// Match classes with pyspot attribute
 	auto hasPyspot = clang::ast_matchers::hasAttr( clang::attr::Annotate );
 	auto pyMatcher = clang::ast_matchers::decl( hasPyspot ).bind( "PyspotTag" );
-	m_Matcher.addMatcher( pyMatcher, &m_Handler );
+	matcher.addMatcher( pyMatcher, &handler );
 }
 
 
 void Consumer::HandleTranslationUnit( clang::ASTContext& context )
 {
 	// Run the matchers when we have the whole TU parsed
-	m_Matcher.matchAST( context );
+	matcher.matchAST( context );
 }
 
 

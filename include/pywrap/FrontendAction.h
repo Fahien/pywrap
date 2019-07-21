@@ -17,53 +17,13 @@ namespace pywrap
 class FrontendAction : public clang::ASTFrontendAction
 {
   public:
-	FrontendAction( std::unordered_map<std::string, binding::Module>& m, Printer& printer )
-	    : modules{ m }, m_Printer{ printer }
+	FrontendAction( std::unordered_map<std::string, binding::Module>& m ) : modules{ m }
 	{
 	}
 
-	const std::vector<std::string>& GetGlobalIncludes() const
+	const std::vector<std::string>& get_global_includes() const
 	{
-		return m_GlobalIncludes;
-	}
-
-	void AddGlobalInclude( const std::string& searchPath );
-	// TODO remove
-	void AddClassInclude( const std::string& include )
-	{
-	}
-	void AddClassDeclaration( const std::string& str )
-	{
-		m_Printer.AddClassDeclaration( str );
-	}
-	void AddClassDefinition( const std::string& str )
-	{
-		m_Printer.AddClassDefinition( str );
-	}
-	void AddClassRegistration( const std::string& str )
-	{
-		m_Printer.AddClassRegistration( str );
-	}
-	void AddEnumerator( const std::string& str )
-	{
-		m_Printer.AddEnumerator( str );
-	}
-	void AddWrapperDeclaration( const std::string& str )
-	{
-		m_Printer.AddWrapperDeclaration( str );
-	}
-	void AddWrapperDefinition( const std::string& str )
-	{
-		m_Printer.AddWrapperDefinition( str );
-	}
-	void AddHandled( const std::string& name )
-	{
-		m_Printer.AddHandled( name );
-	}
-
-	const std::vector<std::string>& GetHandled() const
-	{
-		return m_Printer.GetHandled();
+		return global_includes;
 	}
 
 	/// Creates a consumer
@@ -73,14 +33,11 @@ class FrontendAction : public clang::ASTFrontendAction
 	/// Starts handling a source file
 	bool BeginSourceFileAction( clang::CompilerInstance& compiler ) override;
 
-
   private:
 	/// Map to be populated by the consumer
 	std::unordered_map<std::string, binding::Module>& modules;
 
-	Printer& m_Printer;
-
-	std::vector<std::string> m_GlobalIncludes;
+	std::vector<std::string> global_includes;
 };
 
 
@@ -88,12 +45,9 @@ class FrontendAction : public clang::ASTFrontendAction
 class FrontendActionFactory : public clang::tooling::FrontendActionFactory
 {
   public:
-	FrontendActionFactory( Printer& printer ) : m_Printer{ printer }
-	{
-	}
 	FrontendAction* create() override
 	{
-		return new FrontendAction{ modules, m_Printer };
+		return new FrontendAction{ modules };
 	}
 
 	/// @return The modules created by the action
@@ -103,8 +57,6 @@ class FrontendActionFactory : public clang::tooling::FrontendActionFactory
 	};
 
   private:
-	Printer& m_Printer;
-
 	std::unordered_map<std::string, binding::Module> modules;
 };
 

@@ -123,12 +123,12 @@ std::string to_python( const clang::QualType& qual_type, std::string name )
 {
 	auto type = qual_type;
 
-	if (type->isPointerType())
+	if ( type->isPointerType() )
 	{
 		type = type->getPointeeType();
 		name = "( *" + name + " )";
 	}
-	
+
 	if ( type->isBooleanType() )
 	{
 		return "PyBool_FromLong( static_cast<long>( " + name + ") )";
@@ -302,7 +302,7 @@ std::string to_c( const clang::QualType& type, std::string name )
 		auto ret = "reinterpret_cast<" + type_name + "*>( reinterpret_cast<_PyspotWrapper*>( " + name + " )->data )";
 
 		// Get the pointer if that is expected
-		if (is_pointer)
+		if ( is_pointer )
 		{
 			return ret;
 		}

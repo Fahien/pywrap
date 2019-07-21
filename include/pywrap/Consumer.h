@@ -8,8 +8,8 @@
 
 namespace pywrap
 {
-// @brief Implementation of the ASTConsumer interface for reading an AST produced
-// by the Clang parser. It registers a couple of matchers and runs them on the AST.
+/// Implementation of the ASTConsumer interface for reading an AST produced
+/// by the Clang parser. It registers a couple of matchers and runs them on the AST.
 class Consumer : public clang::ASTConsumer
 {
   public:
@@ -18,9 +18,9 @@ class Consumer : public clang::ASTConsumer
 	void HandleTranslationUnit( clang::ASTContext& context ) override;
 
   private:
-	MatchHandler m_Handler;
+	MatchHandler handler;
 
-	clang::ast_matchers::MatchFinder m_Matcher;
+	clang::ast_matchers::MatchFinder matcher;
 };
 
 

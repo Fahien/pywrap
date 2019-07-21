@@ -9,9 +9,6 @@
 
 namespace pywrap
 {
-void FrontendAction::AddGlobalInclude( const std::string& searchPath ) { m_GlobalIncludes.push_back( searchPath ); }
-
-
 std::unique_ptr<clang::ASTConsumer> FrontendAction::CreateASTConsumer( clang::CompilerInstance& compiler,
                                                                        llvm::StringRef          file )
 {
@@ -28,7 +25,7 @@ bool FrontendAction::BeginSourceFileAction( clang::CompilerInstance& compiler )
 	{
 		auto directory = dir->getName();
 		replace_all( directory, "\\", "/" );
-		m_GlobalIncludes.push_back( directory );
+		global_includes.push_back( directory );
 	}
 
 	return clang::FrontendAction::BeginSourceFileAction( compiler );

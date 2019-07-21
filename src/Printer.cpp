@@ -107,7 +107,7 @@ void Printer::process_wrappers( llvm::raw_fd_ostream& file, const binding::Modul
 	std::for_each( std::begin( records ), std::end( records ), print_wrapper_decl );
 }
 
-void Printer::printBindingsHeader( llvm::StringRef name )
+void Printer::print_bindings_header( llvm::StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
@@ -177,7 +177,7 @@ void Printer::process_defs( llvm::raw_fd_ostream& file, const binding::Module& m
 }
 
 
-void Printer::printBindingsSource( llvm::StringRef name )
+void Printer::print_bindings_source( llvm::StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
@@ -192,7 +192,7 @@ void Printer::printBindingsSource( llvm::StringRef name )
 }
 
 
-void Printer::printExtensionHeader( llvm::StringRef name )
+void Printer::print_extension_header( llvm::StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
@@ -219,7 +219,7 @@ void Printer::printExtensionHeader( llvm::StringRef name )
 }
 
 
-void Printer::printExtensionSource( llvm::StringRef name )
+void Printer::print_extension_source( llvm::StringRef name )
 {
 	OPEN_FILE_STREAM( file, name );
 
@@ -245,7 +245,7 @@ void Printer::printExtensionSource( llvm::StringRef name )
 }
 
 
-void Printer::PrintOut( const std::unordered_map<std::string, binding::Module>& m )
+void Printer::print_out( const std::unordered_map<std::string, binding::Module>& m )
 {
 	// TODO make member variable
 	modules = &m;
@@ -254,10 +254,11 @@ void Printer::PrintOut( const std::unordered_map<std::string, binding::Module>& 
 	llvm::sys::fs::create_directory( "src" );
 	llvm::sys::fs::create_directory( "include/pyspot" );
 	llvm::sys::fs::create_directory( "src/pyspot" );
-	printBindingsHeader( "include/pyspot/Bindings.h" );
-	printBindingsSource( "src/pyspot/Bindings.cpp" );
-	printExtensionHeader( "include/pyspot/Extension.h" );
-	printExtensionSource( "src/pyspot/Extension.cpp" );
+
+	print_bindings_header( "include/pyspot/Bindings.h" );
+	print_bindings_source( "src/pyspot/Bindings.cpp" );
+	print_extension_header( "include/pyspot/Extension.h" );
+	print_extension_source( "src/pyspot/Extension.cpp" );
 }
 
 
