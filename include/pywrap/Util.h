@@ -51,10 +51,7 @@ std::string to_python( const clang::QualType& type, std::string name );
 std::string to_python( const clang::QualType& type, const std::string& name, const TemplateMap& tMap,
                        const clang::ASTContext& ctx );
 
-std::string to_c( const clang::QualType& type, std::string name );
-
-
-std::string to_c( std::string type, std::string name );
+std::string to_c( const clang::QualType& type, std::string name, std::string dest );
 
 
 std::string to_py_parser( const clang::QualType& type );

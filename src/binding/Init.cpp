@@ -95,6 +95,7 @@ void Init::add_def( const clang::CXXConstructorDecl& constructor )
 
 	std::stringstream args_pointers;
 	std::stringstream call_args;
+	std::stringstream pre_call_args;
 
 	for ( auto param : constructor.parameters() )
 	{
@@ -123,7 +124,8 @@ void Init::add_def( const clang::CXXConstructorDecl& constructor )
 		else
 		{
 			def << "PyObject* ";
-			call_args << pywrap::to_c( param->getType(), param_name ) << ", ";
+			pre_call_args << "auto " << pywrap::to_c( param->getType(), param_name, "c_" + param_name ) << ";\n";
+			call_args << "c_" << param_name << ", ";
 		}
 		def << param_name << " {};\n";
 
@@ -152,6 +154,9 @@ void Init::add_def( const clang::CXXConstructorDecl& constructor )
 	// Parse tuple and keywords
 	def << "\t\tif ( PyArg_ParseTupleAndKeywords( args, kwds, " << fmt_name << ", " << kwlist_name << args_pointers.str()
 	    << " ) )\n\t\t{\n";
+
+	// Set up arguments
+	def << "\t\t" << pre_call_args.str();
 
 	// Call constructor
 	def << "\t\t\tdata = new " << tag->get_qualified_name() << "{ " << call_args_str << " };\n"

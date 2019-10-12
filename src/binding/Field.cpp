@@ -43,7 +43,7 @@ void Setter::gen_def()
 	    << "\t\tPyErr_SetString( PyExc_TypeError, \"Cannot delete " << name.str() << "\" );\n"
 	    << "\t\treturn -1;\n\t}\n\n"
 	    << "\tauto data = reinterpret_cast<" << field->get_tag().get_qualified_name() << "*>( self->data );\n"
-	    << "\tdata->" << field->get_name() << " = " << to_c( field->get_type(), "value" ) << ";\n"
+	    << "\t" << to_c( field->get_type(), "value", "data->" + field->get_name() ) << ";\n"
 	    << "\treturn 0;\n}\n\n";
 }
 

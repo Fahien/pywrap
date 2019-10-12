@@ -97,7 +97,7 @@ void Function::gen_def()
 					if ( pPointeeType->isAnyCharacterType() )
 					{
 						def << "PyObject* " << name << ";\n";
-						call_arg_list << pywrap::to_c( type, name );
+						call_arg_list << pywrap::to_c( qualType, name, "py_arg__" + paramName );
 					}
 				}
 				else
