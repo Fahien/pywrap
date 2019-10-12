@@ -35,9 +35,12 @@ void Printer::process_includes( llvm::raw_fd_ostream& file, const binding::Modul
 		process_include( function );
 	}
 
-	for ( auto& en : module.get_enums() )
+	if ( !module.get_enums().empty() )
 	{
-		process_include( en );
+		for ( auto& en : module.get_enums() )
+		{
+			process_include( en );
+		}
 	}
 
 	for ( auto& templ : module.get_templates() )

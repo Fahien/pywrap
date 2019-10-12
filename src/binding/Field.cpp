@@ -67,7 +67,7 @@ const clang::QualType Field::get_type() const
 {
 	if ( field.isTemplated() )
 	{
-		if ( auto spec = dynamic_cast<const Specialization*>( &tag ) )
+		if ( auto spec = static_cast<const Specialization*>( &tag ) )
 		{
 			if ( auto arg = spec->get_arg( field ) )
 			{

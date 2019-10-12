@@ -1,33 +1,32 @@
 set( LLVM_LINK_COMPONENTS Support )
-set( LLVM_ENABLE_RTTI ON )
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
 add_clang_library( pywrap-lib
-	src/Util.cpp
-	src/binding/Binding.cpp
-	src/binding/ClassGetitem.cpp
-	src/binding/Destructor.cpp
-	src/binding/Init.cpp
-	src/binding/Compare.cpp
-	src/binding/Method.cpp
-	src/binding/TypeObject.cpp
-	src/binding/Field.cpp
-	src/binding/Tag.cpp
-	src/binding/Module.cpp
-	src/binding/Function.cpp
-	src/binding/Enum.cpp
-	src/binding/CXXRecord.cpp
-	src/binding/Wrapper.cpp
-	src/Printer.cpp
-	src/FrontendAction.cpp
-	src/Consumer.cpp
-	src/MatchHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Util.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Binding.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/ClassGetitem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Destructor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Init.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Compare.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Method.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/TypeObject.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Field.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Tag.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Module.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Function.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Enum.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/CXXRecord.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/binding/Wrapper.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Printer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/FrontendAction.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Consumer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MatchHandler.cpp
 )
 add_clang_executable( pywrap
-	src/Pywrap.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/src/Pywrap.cpp
 )
 
-target_include_directories( pywrap-lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include )
-target_include_directories( pywrap PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
 target_link_libraries( pywrap-lib
 	PRIVATE
@@ -36,7 +35,7 @@ target_link_libraries( pywrap-lib
 	clangBasic
 	clangFrontend
 	clangTooling
-	clangToolingRefactor
+	clangToolingRefactoring
 )
 
 target_link_libraries( pywrap

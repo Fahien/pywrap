@@ -20,35 +20,45 @@ In order to build Pywrap, you need to fulfill [the requirements](https://llvm.or
  - [Python](http://www.python.org/download), because;
  - [CMake](http://www.cmake.org/download), for building.
 
-Then you can proceed to clone [LLVM](https://github.com/llvm-mirror/llvm), [clang](https://github.com/llvm-mirror/clang), custom [clang-tools-extra](https://github.com/Fahien/clang-tools-extra), and pywrap in the right directories.
+Then you can proceed to clone [LLVM-project](https://github.com/llvm/llvm-project), and pywrap under the `clang-tools-extra` directory.
 
 ```bash
 # LLVM
-git clone -b release_80 https://github.com/llvm-mirror/llvm.git llvm
-
-# Clang
-cd llvm/tools
-git clone -b release_80 https://github.com/llvm-mirror/clang.git clang
-
-# Clang extra
-cd clang/tools
-git clone -b release_80 https://github.com/Fahien/clang-tools-extra.git extra
+git clone -b release_90 https://github.com/llvm/llvm-project.git
 
 # Pywrap
-cd extra
-git clone -b release_80 https://github.com/Fahien/pywrap.git pywrap
+cd llvm-project/clang-tools-extra
+git clone https://github.com/Fahien/pywrap.git pywrap
 
-# Go back
-cd ../../../../..
+# Go up
+cd ..
 ```
 
 ## Build
 
-Generate the project with cmake: `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_RTTI=ON`
+Modify `clang-tools-extra/CMakeLists.txt` by adding the following line:
 
-Compile it: `cmake --build build --config Release`
+```cmake
+add_subdirectory(pywrap)
+```
 
-Run the executable: `build\bin\pywrap.exe`
+Generate the project with cmake:
+
+```bash
+cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS=clang;clang-tools-extra
+```
+
+Compile it.
+
+```bash
+cmake --build build --config Release
+```
+
+Run the executable.
+
+```sh
+build\bin\pywrap.exe
+```
 
 ## Command line arguments
 

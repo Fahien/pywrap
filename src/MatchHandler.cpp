@@ -180,7 +180,7 @@ void MatchHandler::generate_bindings( const clang::Decl& decl )
 						continue;
 					}
 
-					if ( auto tag = field.get_type()->getAsTagDecl() )
+					if ( auto tag = type->getAsTagDecl() )
 					{
 						generate_bindings( *tag );
 					}

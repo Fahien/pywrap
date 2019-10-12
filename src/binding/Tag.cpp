@@ -39,8 +39,9 @@ void Tag::Methods::gen_def()
 	if ( tag )
 	{
 		def << sign.str() << "[] = {\n";
-		if ( auto templ = dynamic_cast<const Template*>( tag ) )
+		if ( tag->get_templ() )
 		{
+			auto templ = static_cast<const Template*>( tag );
 			size++;
 			def << "\t{ \"__class_getitem__\", " << templ->get_class_getitem().get_py_name()
 			    << ", METH_O|METH_CLASS, NULL },\n";
@@ -177,8 +178,9 @@ void Tag::Accessors::gen_def()
 		// Just definition
 		def << sign.str() << "[] = {\n";
 
-		if ( auto record = dynamic_cast<const CXXRecord*>( tag ) )
+		if ( clang::dyn_cast<clang::CXXRecordDecl>( tag->get_handle() ) )
 		{
+			auto record = static_cast<const CXXRecord*>( tag );
 			size += record->get_fields().size();
 
 			for ( auto& field : record->get_fields() )

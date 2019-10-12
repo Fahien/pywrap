@@ -109,8 +109,9 @@ void Wrapper::gen_def()
 {
 	gen_pointer_constructor_def();
 
-	if ( auto record = dynamic_cast<const CXXRecord*>( tag ) )
+	if ( tag && clang::dyn_cast<clang::CXXRecordDecl>( tag->get_handle() ) )
 	{
+		auto record = static_cast<const CXXRecord*>( tag );
 		if ( record->get_record().hasSimpleCopyConstructor() )
 		{
 			gen_copy_constructor_def();

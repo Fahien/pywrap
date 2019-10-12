@@ -144,7 +144,7 @@ class Module : public Binding
 
   private:
 	/// Named decl
-	const clang::NamedDecl* ns;
+	const clang::NamedDecl* ns = nullptr;
 
 	/// Python MethodDef
 	Methods methods;
