@@ -112,6 +112,7 @@ void Init::add_def( const clang::CXXConstructorDecl& constructor )
 		fmt_def << pywrap::to_py_parser( qual_type );
 
 		auto param_name = param->getNameAsString();
+		assert( param_name != "" && "Parameter must have a name" );
 		args_pointers << ", &" << param_name;
 
 		// Param decl

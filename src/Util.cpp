@@ -123,54 +123,41 @@ std::string to_python( const clang::QualType& qual_type, std::string name )
 {
 	auto type = qual_type;
 
+	// Pointer
 	if ( type->isPointerType() )
 	{
 		type = type->getPointeeType();
 		name = "( *" + name + " )";
 	}
 
+	// Check std classes
+	std::string type_name = type.getUnqualifiedType().getAsString();
+	if ( type_name.substr( 0, 5 ) == "class" )
+	{
+		type_name = type_name.substr( 6, type_name.size() - 6 );
+	}
+
+	// Bool
 	if ( type->isBooleanType() )
 	{
 		return "PyBool_FromLong( static_cast<long>( " + name + ") )";
 	}
-
-	if ( type->isIntegerType() )
+	// Integer
+	else if ( type->isIntegerType() )
 	{
 		return "PyLong_FromLong( static_cast<long>( " + name + " ) )";
 	}
-
-	if ( type->isFloatingType() )
+	// Float
+	else if ( type->isFloatingType() )
 	{
 		return "PyFloat_FromDouble( static_cast<double>( " + name + " ) )";
 	}
-
-	if ( type->isCharType() )
+	// Char
+	else if ( type->isCharType() )
 	{
 		return "PyUnicode_FromString( &" + name + " )";
 	}
-
-	// Check std classes
-	auto type_name = type.getAsString();
-
-	if ( type_name.find( "std::string" ) != std::string::npos )
-	{
-		return "PyUnicode_FromString( " + name + ".c_str() )";
-	}
-	else if ( type_name.find( "std::vector" ) != std::string::npos )
-	{
-		// Create python list
-		std::string ret = "PyList_New( " + name + ".size() );\n";
-		ret += "\tfor ( size_t i = 0; i < " + name + ".size(); ++i )\n\t{\n" + "\t\tauto& element = " + name + "[i];\n" +
-		       "\t\tauto py_element = ";  // get param time
-		auto  vec_class      = qual_type->getAsCXXRecordDecl();
-		auto  spec           = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>( vec_class );
-		auto& contained_type = spec->getTemplateArgs().get( 0 );
-
-		ret += to_python( contained_type.getAsType(), "element" );
-
-		ret += ";\n\t\tPyList_SET_ITEM( ret, i, py_element );\n\t}";
-		return ret;
-	}
+	// Array
 	else if ( type->isArrayType() )
 	{
 		// Create python list
@@ -186,6 +173,45 @@ std::string to_python( const clang::QualType& qual_type, std::string name )
 		ret += ";\n\t\tPyList_SET_ITEM( ret, i, py_element );\n\t}";
 		return ret;
 	}
+	// String
+	else if ( type_name.find( "std::string" ) == 0 || type_name.find( "std::__1::basic_string<char>" ) == 0 )
+	{
+		return "PyUnicode_FromString( " + name + ".c_str() )";
+	}
+	// Vector
+	else if ( type_name.find( "std::vector" ) == 0 )
+	{
+		// Create python list
+		std::string ret = "PyList_New( " + name + ".size() );\n";
+		ret += "\tfor ( size_t i = 0; i < " + name + ".size(); ++i )\n\t{\n" + "\t\tauto& element = " + name + "[i];\n" +
+		       "\t\tauto py_element = ";  // get param time
+		auto  vec_class      = qual_type->getAsCXXRecordDecl();
+		auto  spec           = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>( vec_class );
+		auto contained_type = spec->getTemplateArgs().get( 0 ).getAsType();
+
+		ret += to_python( contained_type, "element" );
+
+		ret += ";\n\t\tPyList_SET_ITEM( ret, i, py_element );\n\t}\n";
+		return ret;
+	}
+	// Map
+	else if ( type_name.find( "std::map" ) == 0 )
+	{
+		std::string ret = "PyDict_New();\n";
+		ret += "\tfor ( auto& pair : " + name + " )\n\t{\n";
+
+		auto  map_class      = qual_type->getAsCXXRecordDecl();
+		auto  spec           = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>( map_class );
+		auto key_type = spec->getTemplateArgs().get( 0 ).getAsType();
+		auto val_type = spec->getTemplateArgs().get( 1 ).getAsType();
+
+		ret += "\t\tauto py_key = " + to_python( key_type, "pair.first" ) + ";\n";
+		ret += "\t\tauto py_val = " + to_python( val_type, "pair.second" ) + ";\n";
+		ret += "\t\tPyDict_SetItem( ret, py_key, py_val );\n\t}\n";
+
+		return ret;
+	}
+	// Object
 	else
 	{
 		return "pyspot::Wrapper<" + type_name + ">{ &" + name + " }.GetIncref()";
@@ -205,15 +231,21 @@ std::string to_c( const clang::QualType& type, std::string name, std::string des
 		actual_type = type->getPointeeType();
 	}
 
-	std::string type_name = actual_type.getUnqualifiedType().getAsString();
-
 	auto ret = dest + " = ";
 
+	// Check std classes
+	std::string type_name = actual_type.getUnqualifiedType().getAsString();
+	if ( type_name.substr( 0, 5 ) == "class" )
+	{
+		type_name = type_name.substr( 6, type_name.size() - 6 );
+	}
+
+	// Bool
 	if ( actual_type->isBooleanType() )
 	{
 		ret += "static_cast<bool>( PyLong_AsLong( " + name + " ) )";
 	}
-
+	// Integer
 	else if ( actual_type->isIntegerType() )
 	{
 		if ( actual_type->isSpecificBuiltinType( clang::BuiltinType::Int ) )
@@ -225,55 +257,67 @@ std::string to_c( const clang::QualType& type, std::string name, std::string des
 			ret += "PyLong_AsLong( " + name + " )";
 		}
 	}
-
+	// Float
 	else if ( actual_type->isSpecificBuiltinType( clang::BuiltinType::Float ) )
 	{
 		ret += "static_cast<float>( PyFloat_AsDouble( " + name + " ) )";
 	}
-
+	// Double
 	else if ( actual_type->isSpecificBuiltinType( clang::BuiltinType::Double ) )
 	{
 		ret += "PyFloat_AsDouble( " + name + " )";
 	}
-
+	// Char
 	else if ( actual_type->isCharType() )
 	{
 		ret += "pyspot::String{ " + name + " }.ToCString()";
 	}
-
-	// Check std classes
-	else if ( type_name.find( "std::string" ) != std::string::npos )
-	{
-		ret += "pyspot::String{ " + name + " }.ToCString()";
-	}
-
-	else if ( type_name.find( "std::vector" ) == 0 )
-	{
-		// Create python list
-		auto  vec_class      = actual_type->getAsCXXRecordDecl();
-		auto  spec           = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>( vec_class );
-		auto& contained_type = spec->getTemplateArgs().get( 0 );
-
-		ret += "std::vector<" + contained_type.getAsType().getAsString() + ">{}";
-	}
-
+	// Array
 	else if ( type->isArrayType() )
 	{
 		// Get elements from python list
-		ret = "\tarray_size = sizeof( " + dest + " ) / sizeof( " + dest + "[0] )\n";
+		ret = "auto array_size = sizeof( " + dest + " ) / sizeof( " + dest + "[0] );\n";
 		ret += "\tfor( size_t i = 0; i < array_size; ++i )\n\t{\n";
 		ret += "\t\tauto element = PyList_GetItem( " + name + ", i );\n";
 		auto array = type->getAsArrayTypeUnsafe();
 		ret += "\t\t" + to_c( array->getElementType(), "element", dest + "[i]" ) + ";\n";
 		ret += "\t}\n";
 	}
+	// String
+	else if ( type_name.find( "std::string" ) == 0 || type_name.find( "std::__1::basic_string<char>" ) == 0 )
+	{
+		ret += "pyspot::String{ " + name + " }.ToCString()";
+	}
+	// Vector
+	else if ( type_name.find( "std::vector" ) == 0 )
+	{
+		// Create python list
+		auto  vec_class      = actual_type->getAsCXXRecordDecl();
+		auto  spec           = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>( vec_class );
+		auto& contained_type = spec->getTemplateArgs().get( 0 );
+		// TODO fill vector
+		ret += "std::vector<" + contained_type.getAsType().getAsString() + ">{}";
+	}
+	// Map
+	else if ( type_name.find( "std::map" ) == 0 )
+	{
+		// Create python dictionary
+		auto  map_class      = actual_type->getAsCXXRecordDecl();
+		auto  spec           = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>( map_class );
+		auto key_type = spec->getTemplateArgs().get( 0 ).getAsType();
+		auto val_type = spec->getTemplateArgs().get( 1 ).getAsType();
 
+		// Get elements from python dict
+		ret = dest + ".clear();\n\tPyObject* py_key;\n\tPyObject* py_val;\n\tPy_ssize_t pos = 0;\n";
+		ret += "\twhile ( PyDict_Next( " + name + ", &pos, &py_key, &py_val ) )\n\t{\n";
+		ret += "\t\tauto " + to_c( key_type, "py_key", "key" ) + ";\n";
+		ret += "\t\tauto " + to_c( val_type, "py_val", "val" ) + ";\n";
+		ret += "\t\t" + dest + "[key] = val;\n";
+		ret += "\t}\n";
+	}
+	// Object
 	else
 	{
-		if ( type_name.substr( 0, 5 ) == "class" )
-		{
-			type_name = type_name.substr( 6, type_name.size() - 6 );
-		}
 		auto assign = "reinterpret_cast<" + type_name + "*>( reinterpret_cast<_PyspotWrapper*>( " + name + " )->data )";
 
 		// Get the pointer if that is expected
@@ -295,20 +339,22 @@ std::string to_py_parser( const clang::QualType& type )
 	{
 		return "i";
 	}
-	if ( type->isFloatingType() )
+	else if ( type->isFloatingType() )
 	{
 		return "f";
 	}
-	if ( type->isUnsignedIntegerOrEnumerationType() )
+	else if ( type->isUnsignedIntegerOrEnumerationType() )
 	{
 		return "I";
 	}
-	if ( type->isRealFloatingType() )
+	else if ( type->isRealFloatingType() )
 	{
 		return "d";
 	}
-
-	return "O";
+	else
+	{
+		return "O";
+	}
 }
 
 

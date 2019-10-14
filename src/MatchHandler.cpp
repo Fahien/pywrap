@@ -100,12 +100,11 @@ B MatchHandler::create_binding( const D& decl, const binding::Binding& parent )
 
 void MatchHandler::generate_bindings( const clang::Decl& decl )
 {
-	// The decl should have a declaration context
 	auto ctx = decl.getDeclContext();
 	assert( ctx && "Decl should have a declaration context" );
 	auto& module = get_module( *ctx );
 
-	// Switch according to the decl
+	// Generate function bindings
 	if ( auto func_decl = clang::dyn_cast<clang::FunctionDecl>( &decl ) )
 	{
 		auto it = find_if( std::begin( module.get_functions() ), std::end( module.get_functions() ),
@@ -146,7 +145,7 @@ void MatchHandler::generate_bindings( const clang::Decl& decl )
 				auto templ         = create_binding<binding::Template>( *template_decl, module );
 				templ.init();
 
-				// TODO handle specialization
+				// Handle specialization
 				for ( auto spec_decl : template_decl->specializations() )
 				{
 					spec_decl->startDefinition();
@@ -174,13 +173,28 @@ void MatchHandler::generate_bindings( const clang::Decl& decl )
 					auto type = field.get_type();
 					auto name = type.getAsString();
 
-					// Skip std types
-					if ( name.find( "std::" ) != std::string::npos )
+					// Check templated std types
+					if ( name.find( "std::" ) == 0 )
 					{
-						continue;
-					}
+						auto& field_decl = field.get_handle();
 
-					if ( auto tag = type->getAsTagDecl() )
+						if ( field_decl.isTemplated() )
+						{
+							auto param_count = field_decl.getNumTemplateParameterLists();
+							for ( size_t i = 0; i < param_count; ++i )
+							{
+								auto param_list = field_decl.getTemplateParameterList( param_count );
+								for ( auto param : *param_list )
+								{
+									if ( auto tag = type->getAsTagDecl() )
+									{
+										generate_bindings( *tag );
+									}
+								}
+							}
+						}
+					}
+					else if ( auto tag = type->getAsTagDecl() )
 					{
 						generate_bindings( *tag );
 					}
