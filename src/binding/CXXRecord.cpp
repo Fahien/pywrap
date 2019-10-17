@@ -20,8 +20,16 @@ void CXXRecord::gen_fields()
 			continue;
 		}
 
+		auto type = field->getType();
+
 		// Do not add void*
-		if ( field->getType()->isVoidPointerType() )
+		if ( type->isVoidPointerType() )
+		{
+			continue;
+		}
+
+		// Do not add std::function
+		if ( type.getAsString().find( "std::function" ) == 0 )
 		{
 			continue;
 		}

@@ -98,6 +98,45 @@ B MatchHandler::create_binding( const D& decl, const binding::Binding& parent )
 	return binding;
 }
 
+
+void MatchHandler::generate_bindings( clang::QualType type )
+{
+	if ( type->isPointerType() )
+	{
+		type = type->getPointeeType();
+	}
+
+	if ( type->isBuiltinType() )
+	{
+		return; // Do not generate bindings for builtin types
+	}
+
+	auto name = type.getAsString();
+
+	// Check templated std types
+	if ( name.find( "std::" ) == 0 )
+	{
+		if ( name.find( "std::vector" ) == 0 || name.find( "std::map" ) == 0 )
+		{
+			if ( auto elab = clang::dyn_cast<clang::ElaboratedType>( type.getTypePtr() ) )
+			{
+				if ( auto spec = clang::dyn_cast<clang::TemplateSpecializationType>( elab->desugar().getTypePtr() ) )
+				{
+					for ( auto templ : spec->template_arguments() )
+					{
+						generate_bindings( templ.getAsType() );
+					}
+				}
+			}
+		}
+	}
+	else if ( auto tag = type->getAsTagDecl() )
+	{
+		generate_bindings( *tag );
+	}
+}
+
+
 void MatchHandler::generate_bindings( const clang::Decl& decl )
 {
 	auto ctx = decl.getDeclContext();
@@ -170,34 +209,7 @@ void MatchHandler::generate_bindings( const clang::Decl& decl )
 				auto& rec = module.get_records().back();
 				for ( auto& field : rec.get_fields() )
 				{
-					auto type = field.get_type();
-					auto name = type.getAsString();
-
-					// Check templated std types
-					if ( name.find( "std::" ) == 0 )
-					{
-						auto& field_decl = field.get_handle();
-
-						if ( field_decl.isTemplated() )
-						{
-							auto param_count = field_decl.getNumTemplateParameterLists();
-							for ( size_t i = 0; i < param_count; ++i )
-							{
-								auto param_list = field_decl.getTemplateParameterList( param_count );
-								for ( auto param : *param_list )
-								{
-									if ( auto tag = type->getAsTagDecl() )
-									{
-										generate_bindings( *tag );
-									}
-								}
-							}
-						}
-					}
-					else if ( auto tag = type->getAsTagDecl() )
-					{
-						generate_bindings( *tag );
-					}
+					generate_bindings( field.get_type() );
 				}
 			}
 		}

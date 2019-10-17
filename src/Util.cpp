@@ -214,7 +214,7 @@ std::string to_python( const clang::QualType& qual_type, std::string name )
 	// Object
 	else
 	{
-		return "pyspot::Wrapper<" + type_name + ">{ &" + name + " }.GetIncref()";
+		return "pyspot::Wrapper<" + type_name + ">{ const_cast<" + type_name + "*>( &" + name + " ) }.GetIncref()";
 	}
 }
 

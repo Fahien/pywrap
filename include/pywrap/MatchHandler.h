@@ -23,6 +23,10 @@ class MatchHandler : public clang::ast_matchers::MatchFinder::MatchCallback
 	/// @param[in] result Match result for pyspot attribute
 	virtual void run( const clang::ast_matchers::MatchFinder::MatchResult& );
 
+	/// @brief Generate pythong bindings for a clang::QualType
+	/// @param[in] type A QualType which can be any kind of type
+	void generate_bindings( clang::QualType type );
+
 	/// @brief Generates python bindings for a clang::Decl
 	/// @param[in] decl A Decl which can be a variable, a function, a struct, ...
 	void generate_bindings( const clang::Decl& decl );
